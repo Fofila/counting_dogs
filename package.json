@@ -1,0 +1,26 @@
+{
+  "name": "counting_dogs",
+  "version": "0.0.0",
+  "description": "JS server for fetching data for TDKD",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fofila/counting_dogs.git"
+  },
+  "author": "Fofila",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Fofila/counting_dogs/issues"
+  },
+  "homepage": "https://github.com/Fofila/counting_dogs#readme",
+  "dependencies": {
+    "discord.js": "^12.5.1",
+    "dotenv": "^8.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.6"
+  }
+}
