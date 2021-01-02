@@ -20,22 +20,22 @@ const dotenv = require('dotenv');
 const WebSocket = require('ws');
 const got = require('got');
 
-require('dotenv').config();
 
-// I get my ID from the names (taken from discord)
+// TODO: get names from discord
 // TODO: clean the names from @ or [BJAY]
 // TODO: get lowercase
 // const list_of_names = ["fofila", "vaaragh"]
 const list_of_names = ["fofila"]
 const dict_of_values = {}
 
+require('dotenv').config();
 
 main();
 
 
 /*
-  given the name of the player, the info(params) needed and the dictionary you want to populate
-  call the PS2 API and add the response to the dict
+given the name of the player, the info(params) needed and the dictionary you want to populate
+call the PS2 API and add the response to the dict
 */
 async function setIDfromName(name=null, params="&c:show=character_id", dict=dict_of_values){
   // TODO: if name is empty crash
@@ -51,23 +51,16 @@ async function setIDfromName(name=null, params="&c:show=character_id", dict=dict
 }
 
 /*
-  function that creates the connection to the WS
+function that creates the connection to the WS
 */
 async function createWSConnection(url_to_ws){
   const connection = new WebSocket(url_to_ws)
-  /*
-    navigate di e.data to get the value needed
-    TODO: add a list as a log of events
-  */
-  connection.onmessage = (e) => {
-    console.log(e.data)
-  }
   connection.onerror = error => {console.error(`WebSocket error: ${error}`)}
   return connection;
 }
 
 /*
-  from a list of names get the ID and populate
+from a list of names get the ID and populate
 */
 async function populate_names(names){
   for (let i = 0; i < names.length; i++) {
@@ -76,25 +69,41 @@ async function populate_names(names){
 }
 
 /*
-  the first function (needed for the async hell)
+the first function (needed for the async hell)
 */
 async function main(){
+  let list_of_ids = []
   await populate_names(list_of_names);
+  for (const id in dict_of_values) {
+    list_of_ids.push(id)
+  }
   console.log(dict_of_values);
   const ws = await createWSConnection(`wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.PS2_TOKEN}`);
   ws.onopen = () => {
-    list_of_ids = []
-    for (const id in dict_of_values) {
-      list_of_ids.push(id)
-    }
+    /*
+    add here all the request to the ws
+    */
     console.info('Connection to PS2 server open!')
     ws.send('{"action":"clearSubscribe","all":"true","service":"event"}')
     let message = `{"service":"event","action":"subscribe","characters":[${list_of_ids}],"eventNames":["GainExperience_experience_id_4","GainExperience_experience_id_5","GainExperience_experience_id_7"]}`;
     console.log(message);
     // TODO: unsubscribe to heartbeat
     ws.send(message)
-    // ws.send('{"service":"event","action":"help"}')
-  } 
+  }
+  /*
+    navigate di e.data to get the value needed
+    TODO: add a list as a log of events
+  */
+  ws.onmessage = (e) => {
+    let message_dict = JSON.parse(e.data);
+    if(message_dict.type !== "heartbeat"){
+      // it is a useful message
+      console.log(e.data.payload)
+
+    }
+    // {"payload":{"amount":"75","character_id":"5428016459730317697","event_name":"GainExperience","experience_id":"7","loadout_id":"4","other_id":"5428716652642740209","timestamp":"1609584372","world_id":"13","zone_id":"4"},"service":"event","type":"serviceMessage"}
+    // {"online":{"EventServerEndpoint_Cobalt_13":"true","EventServerEndpoint_Connery_1":"true","EventServerEndpoint_Emerald_17":"true","EventServerEndpoint_Jaeger_19":"true","EventServerEndpoint_Miller_10":"true","EventServerEndpoint_Soltech_40":"true"},"service":"event","type":"heartbeat"}
+  }
 }
 
 
