@@ -4,7 +4,7 @@
   "description": "JS server for fetching data for TDKD",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "nodemon index.js"
   },
   "repository": {
     "type": "git",
@@ -18,7 +18,9 @@
   "homepage": "https://github.com/Fofila/counting_dogs#readme",
   "dependencies": {
     "discord.js": "^12.5.1",
-    "dotenv": "^8.2.0"
+    "dotenv": "^8.2.0",
+    "got": "^11.8.1",
+    "ws": "^7.4.2"
   },
   "devDependencies": {
     "nodemon": "^2.0.6"
