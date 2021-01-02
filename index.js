@@ -20,12 +20,11 @@ const dotenv = require('dotenv');
 const WebSocket = require('ws');
 const got = require('got');
 
-
 // TODO: get names from discord
 // TODO: clean the names from @ or [BJAY]
 // TODO: get lowercase
 // const list_of_names = ["fofila", "vaaragh"]
-const list_of_names = ["fofila", "y4ny4n", "hecules55"]
+const list_of_names = ["fofila", "andersaah", "hecules55", "neon963", "capitalistslave"]
 const dict_of_values = {}
 
 require('dotenv').config();
@@ -42,9 +41,9 @@ async function setIDfromName(name=null, params="&c:show=character_id", dict=dict
   try {
     var response = await got(`http://census.daybreakgames.com/get/ps2:v2/character/?name.first_lower=${name}${params}`);
     console.log(JSON.parse(response.body).character_list[0].character_id)
-    dict_of_values[JSON.parse(response.body).character_list[0].character_id] = {}
-    dict_of_values[JSON.parse(response.body).character_list[0].character_id]["name"] = name;
-    console.log(dict_of_values);
+    dict[JSON.parse(response.body).character_list[0].character_id] = {}
+    dict[JSON.parse(response.body).character_list[0].character_id]["name"] = name;
+    console.log(dict);
   } catch (error) {
     console.log(error);
   }
@@ -106,6 +105,8 @@ async function main(){
       // it is a useful message
       // console.log(message_dict)
       if(message_dict.type === "serviceMessage"){
+        console.log(message_dict)
+        // TODO: if not payload skip
         updateValue(dict_of_values, message_dict.payload)
       }
     }
@@ -127,18 +128,21 @@ async function main(){
   {"character_id":"5428016459730317697","experience_id":"7", "other_id":"8291480109032191665"}
 */
 function updateValue(dict, value){
-  console.log(dict, value)
   // TODO: if value["character_id"] throw error
   // TODO: if value["experience_id"] throw error
-  let other_id = (dict[value['other_id']]) ? dict[value['other_id']] : value['other_id'];
-  let character_id = (dict[value['character_id']]) ? dict[value['character_id']] : value['character_id'];
+  let other_id = (dict[value['other_id']]) ? dict[value['other_id']]['name'] : value['other_id'];
+  let character_id = value['character_id'];
+  if(dict[value['character_id']]){
+    character_id = dict[value['character_id']]["name"]
+    if(dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]){
+      dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]++
+    }else{
+      dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`] = 1
+    }
+  }
+  
   console.log(character_id, type_gain_experience[`GainExperience_experience_id_${value["experience_id"]}`], other_id)
-  // try {
-  //   // TODO: if character_id is in the list otherwise is a death
-  //   dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]++
-  // } catch (error) {
-  //   dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`] = 0
-  // }
+  
   console.log(dict)
 }
 
