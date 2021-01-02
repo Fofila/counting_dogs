@@ -23,7 +23,6 @@ const got = require('got');
 // TODO: get names from discord
 // TODO: clean the names from @ or [BJAY]
 // TODO: get lowercase
-// const list_of_names = ["fofila", "vaaragh"]
 const list_of_names = ["fofila", "andersaah", "hecules55", "neon963", "capitalistslave"]
 const dict_of_values = {}
 
