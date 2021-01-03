@@ -1,12 +1,11 @@
-exports.stamp = (text='...',args={}) => {
+exports.stamp_now = (text='...',args={}) => {
   let now = new Date()
-  let date = `[${now.getDate()}/${now.getMonth()}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}]`
-  let str = date+`${user}:${text}`
-  for(let i in args){
-    // TODO: convert everything in text
-    str += i
-  }
-  return str
+  let date = (('' + now.getUTCDate()).length === 1) ? '0'+now.getUTCDate() : now.getUTCDate()
+  let month = (('' + now.getUTCMonth()).length === 1) ? '0'+(now.getUTCMonth()+1) : now.getUTCMonth()+1
+  let hour = (('' + now.getUTCHours()).length === 1) ? '0'+now.getUTCHours() : now.getUTCHours()
+  let minutes = (('' + now.getUTCMinutes()).length === 1) ? '0'+now.getUTCMinutes() : now.getUTCMinutes()
+  let seconds = (('' + now.getUTCSeconds()).length === 1) ? '0'+now.getUTCSeconds() : now.getUTCSeconds()
+  return date = `[${date}/${month}/${now.getUTCFullYear()} ${hour}:${minutes}:${seconds}]`
 }
 
 exports.clearName = (name) => {

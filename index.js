@@ -7,7 +7,7 @@ const client = new Discord.Client();
 
 const list_of_names = [];
 const dict_of_values = {};
-const prefix = '!';
+const prefix = '.';
 const list_of_squads = [];
 const global = {};
 
@@ -21,13 +21,13 @@ call the PS2 API and add the response to the dict
 async function setIDfromName(name=null, params="&c:show=character_id", dict=dict_of_values){
   // TODO: if name is empty crash
   try {
-    var response = await got(`http://census.daybreakgames.com/get/ps2:v2/character/?name.first_lower=${name}${params}`);
-    console.log(JSON.parse(response.body).character_list[0].character_id)
+    let response = await got(`http://census.daybreakgames.com/get/ps2:v2/character/?name.first_lower=${name}${params}`);
+    console.log(utils.stamp_now(), JSON.parse(response.body).character_list[0].character_id)
     dict[JSON.parse(response.body).character_list[0].character_id] = {}
     dict[JSON.parse(response.body).character_list[0].character_id]["name"] = name;
-    console.log(dict);
+    console.log(utils.stamp_now(), dict);
   } catch (error) {
-    console.log(error);
+    console.log(utils.stamp_now(), error);
   }
 }
 
@@ -58,10 +58,10 @@ async function main(gain_experience_requested=["GainExperience_experience_id_1"]
   let list_of_ids = []
   await populate_names(list_of_names);
   
-  console.log(dict_of_values);
+  console.log(utils.stamp_now(), dict_of_values);
 
   global.ws = await createWSConnection(`wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.PS2_TOKEN}`, function(){
-    console.log(dict_of_values);
+    console.log(utils.stamp_now(), dict_of_values);
   });
   global.ws.onopen = () => {
     /*
@@ -73,7 +73,7 @@ async function main(gain_experience_requested=["GainExperience_experience_id_1"]
     console.info('Connection to PS2 server open!')
     // ws.send('{"action":"clearSubscribe","all":"true","service":"event"}')
     let message = `{"service":"event","action":"subscribe","characters":[${list_of_ids}],"eventNames":${gain_experience_requested}}`;
-    // console.log(message);
+    // console.log(utils.stamp_now(), message);
     global.ws.send(message)
   }
 
@@ -85,9 +85,9 @@ async function main(gain_experience_requested=["GainExperience_experience_id_1"]
     let message_dict = JSON.parse(e.data);
     if(message_dict.type !== "heartbeat"){
       // it is a useful message
-      // console.log(message_dict)
+      // console.log(utils.stamp_now(), message_dict)
       if(message_dict.type === "serviceMessage"){
-        console.log(message_dict)
+        console.log(utils.stamp_now(), message_dict)
         // TODO: if not payload skip
         updateValue(dict_of_values, message_dict.payload)
       }
@@ -123,30 +123,31 @@ function updateValue(dict, value){
     }
   }
   
-  console.log(character_id, type_gain_experience[`GainExperience_experience_id_${value["experience_id"]}`], other_id)
+  console.log(utils.stamp_now(), character_id, type_gain_experience[`GainExperience_experience_id_${value["experience_id"]}`], other_id)
   
-  console.log(dict)
+  console.log(utils.stamp_now(), dict)
 }
 
 // TODO: try to see if it works
-function closeConnection( before, after, websocket=global.ws){
+function closeConnection(before = null, after = null, websocket=global.ws){
+  if(before !== null) before();
   websocket.terminate();
-  websocket.send('{"action":"clearSubscribe","all":"true","service":"event"}');
-  console.log('closed connection')
+  if(after !== null)  after();
+  console.log(utils.stamp_now(), 'Connection closed')
 }
 
 client.once('ready', () => {
-  console.log('Bot online!')
+  console.log(utils.stamp_now(), 'Bot online!')
 })
 
 client.on('message', message => {
   if(!message.content.startsWith(prefix) || message.author.bot) return
-  // console.log(message)
-  //console.log(message.guild)
-  // console.log(message.author.username)
+  // console.log(utils.stamp_now(), message)
+  //console.log(utils.stamp_now(), message.guild)
+  // console.log(utils.stamp_now(), message.author.username)
   const args = message.content.slice(prefix.length).split(/ +/);
   const command = args.shift().toLowerCase();
-  // console.log(args)
+  // console.log(utils.stamp_now(), args)
 
 if(command === 'ping'){ // ping the server
     // TODO: make a real ping
@@ -250,8 +251,9 @@ if(command === 'ping'){ // ping the server
     for (let i = 0; i < list_of_squads.length; i++) {
       message.channel.send(utils.clearSquad(list_of_squads[i], list_of_squads, list_of_names));
     }
-    // TODO: empty list_of_names=[];
-    // TODO: empty list_of_ids=[];
+    for (let j = 0; j < list_of_names.length; j++) {
+      list_of_names.pop()
+    }
   } else if(command === 'clear'){ // clear squad (clear <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
@@ -314,6 +316,12 @@ if(command === 'ping'){ // ping the server
         return;
       }
     }
+  }else if(command === 'dict_of_values'){
+    message.channel.send(JSON.toString(dict_of_values));
+  }else if(command === 'list_of_names'){
+    message.channel.send(JSON.toString(list_of_names));
+  }else if(command === 'list_of_squads'){
+    message.channel.send(JSON.toString(list_of_squads));
   }else{
     message.channel.send("Sorry I didn't understand, can you repeat, please? Or type !help for the list of commands");
   }
