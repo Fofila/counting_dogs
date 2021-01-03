@@ -8,6 +8,7 @@ const list_of_names = [];
 const dict_of_values = {};
 const prefix = '!';
 const list_of_squads = [];
+const global = {};
 
 require('dotenv').config();
 
@@ -52,16 +53,16 @@ async function populate_names(names){
 the first function (needed for the async hell)
 TODO: Not used now! Moved this code in start ops
 */
-async function main(){
+async function main(gain_experience_requested=["GainExperience_experience_id_1"]){
   let list_of_ids = []
   await populate_names(list_of_names);
   
   console.log(dict_of_values);
 
-  const ws = await createWSConnection(`wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.PS2_TOKEN}`, function(){
+  global.ws = await createWSConnection(`wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.PS2_TOKEN}`, function(){
     console.log(dict_of_values);
   });
-  ws.onopen = () => {
+  global.ws.onopen = () => {
     /*
     add here all the request to the ws
     */
@@ -70,17 +71,16 @@ async function main(){
     }
     console.info('Connection to PS2 server open!')
     // ws.send('{"action":"clearSubscribe","all":"true","service":"event"}')
-    let gain_experience_requested = '["GainExperience_experience_id_1","GainExperience_experience_id_4","GainExperience_experience_id_5","GainExperience_experience_id_7"]';
     let message = `{"service":"event","action":"subscribe","characters":[${list_of_ids}],"eventNames":${gain_experience_requested}}`;
     // console.log(message);
-    ws.send(message)
+    global.ws.send(message)
   }
 
   /*
     navigate di e.data to get the value needed
     TODO: add a list as a log of events
   */
-  ws.onmessage = (e) => {
+  global.ws.onmessage = (e) => {
     let message_dict = JSON.parse(e.data);
     if(message_dict.type !== "heartbeat"){
       // it is a useful message
@@ -128,8 +128,10 @@ function updateValue(dict, value){
 }
 
 // TODO: try to see if it works
-function closeConnection(ws, before, after){
-  ws.terminate()
+function closeConnection( before, after, websocket=global.ws){
+  websocket.terminate();
+  websocket.send('{"action":"clearSubscribe","all":"true","service":"event"}');
+  console.log('closed connection')
 }
 
 client.once('ready', () => {
@@ -167,7 +169,7 @@ if(command === 'ping'){ // ping the server
       res += 'stop all (stop)\n';
     }
     message.channel.send(res);
-} else if(command === 'join'){ // insert name (join <squad>)
+  } else if(command === 'join'){ // insert name (join <squad>)
     let squad = args[0];
     let name = cleanName(message.author.username);
     if(list_of_squads.indexOf(squad) !== -1){
@@ -182,7 +184,7 @@ if(command === 'ping'){ // ping the server
     }else{
       message.channel.send(`There is no squad ${squad} :(`);
     }
-  } else if(command === 'leave'){ // remove name (leave <squad>)
+} else if(command === 'leave'){ // remove name (leave <squad>)
     let squad = args[0];
     let name = cleanName(message.author.username);
     for (let i = 0; i < list_of_names.length; i++) {
@@ -192,10 +194,22 @@ if(command === 'ping'){ // ping the server
         return;
       }
     }
-} else if(command === 'get' && args[0] === 'squad' && args[1] !== undefined){ // see squad (get squad <squad>)
-
+  } else if(command === 'get' && args[0] === 'squad' && args[1] !== undefined){ // see squad (get squad <squad>)
+    let squad = args[1];
+    let res = '';
+    if(list_of_squads.indexOf(squad) !== -1){
+      res += `Squad ${squad} is composed by:\n`
+      for (let i = 0; i < list_of_names.length; i++) {
+        if(list_of_names[i]['squad'] === squad){
+          res += `${list_of_names[i]['name']}\n`
+        }
+      }
+    }else{
+      res = `There is no squad ${squad}`;
+    }
+    message.channel.send(res);
   } else if(command === 'get' && args[0] === 'squad'){ // see all squad (get squad)
-    let res = 'These are the squad:\n';
+    let res = 'These are the squads:\n';
     for (let i = 0; i < list_of_squads.length; i++) {
       res += `${list_of_squads[i]}\n`;
     }
@@ -223,7 +237,7 @@ if(command === 'ping'){ // ping the server
         }
       }
       list_of_names.push({'name':name,'squad':squad});
-      message.channel.send(`Added to squad ${squad}`);
+      message.channel.send(`${name} Added to squad ${squad}`);
     }else{
       message.channel.send(`There is no squad ${squad} :(`);
     }
@@ -249,12 +263,13 @@ if(command === 'ping'){ // ping the server
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     } */
-  } else if(command === 'stop'){ // stop recording (stop "<opsname>")
+} else if(command === 'stop'){ // stop recording (stop "<opsname>")
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     }
     let name = args[0];
+    closeConnection(global.ws);
 } else if(command === 'start'){ // start recording (start "<opsname>")
     // TODO: add type_experience as args
     // TODO: add file to save the log of the ops
@@ -262,7 +277,7 @@ if(command === 'ping'){ // ping the server
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     }
-    main();
+    main('["GainExperience_experience_id_1","GainExperience_experience_id_4","GainExperience_experience_id_5","GainExperience_experience_id_7"]');
   } else if(command === 'remove' && args[0] === 'squad'){ // remove squad (remove squad <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
@@ -303,7 +318,6 @@ if(command === 'ping'){ // ping the server
   }
 })
 
-// TODO: made export
 function cleanName(name){
   name = name.toLowerCase();
   name = name.substring(name.indexOf('@') + 1);
@@ -315,10 +329,10 @@ function cleanSquad(squad){
   let message = '';
   if(list_of_squads.indexOf(squad) !== -1){
     message = `Cleaned squad ${squad}\n`
+    message += 'These players are without a squad:\n'
     for (let i = 0; i < list_of_names.length; i++) {
-      message += 'These players are without a squad:\n'
       if(list_of_names[i]['squad'] === squad){
-        message += `${list_of_names[i]['squad']}\n`
+        message += `${list_of_names[i]['name']}\n`
       }
     }
   }else{
