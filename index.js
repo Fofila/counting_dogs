@@ -1,34 +1,15 @@
-/*
-  list of the partecipants of the ops from discord (for now)
-  API for PS2 and discord from .env
-
-  https://discordjs.guide/preparations/setting-up-a-bot-application.html#creating-your-bot
-
-  https://discord.com/developers/applications/794697883596881940/information
-
-  http://census.daybreakgames.com/get/ps2:v2/characters_event/?character_id=5428016459730317697,5428117870052769409&c:limit=100&type=KILL,DEATH
-  http://census.daybreakgames.com/s:example/json/get/ps2:v2/character/5428016459730317697
-  http://census.daybreakgames.com/get/ps2:v2/character/?name.first_lower=pholanx
-
-
-  My obj(dict) will be
-  players = {
-    <id>:{"name":<name>, "heals":<heals>, etc }
-  }
-*/
 const dotenv = require('dotenv');
 const WebSocket = require('ws');
 const got = require('got');
+const Discord = require('discord.js');
+const client = new Discord.Client();
 
-// TODO: get names from discord
-// TODO: clean the names from @ or [BJAY]
-// TODO: get lowercase
-const list_of_names = ["fofila", "andersaah", "hecules55", "neon963", "capitalistslave"]
-const dict_of_values = {}
+const list_of_names = [];
+const dict_of_values = {};
+const prefix = '!';
+const list_of_squads = [];
 
 require('dotenv').config();
-
-main();
 
 
 /*
@@ -63,12 +44,13 @@ from a list of names get the ID and populate
 */
 async function populate_names(names){
   for (let i = 0; i < names.length; i++) {
-    setIDfromName(names[i]);  
+    setIDfromName(names[i]['name']);  
   }
 }
 
 /*
 the first function (needed for the async hell)
+TODO: Not used now! Moved this code in start ops
 */
 async function main(){
   let list_of_ids = []
@@ -149,6 +131,203 @@ function updateValue(dict, value){
 function closeConnection(ws, before, after){
   ws.terminate()
 }
+
+client.once('ready', () => {
+  console.log('Bot online!')
+})
+
+client.on('message', message => {
+  if(!message.content.startsWith(prefix) || message.author.bot) return
+  // console.log(message)
+  //console.log(message.guild)
+  // console.log(message.author.username)
+  const args = message.content.slice(prefix.length).split(/ +/);
+  const command = args.shift().toLowerCase();
+  // console.log(args)
+
+if(command === 'ping'){ // ping the server
+    // TODO: make a real ping
+    message.channel.send('pong!');
+  } else if(command === 'help'){ // list commands
+    let res = "These are all the commands you can type:\n"
+    res += 'insert name (join <squad>)\n';
+    res += 'remove name (leave <squad>)\n';
+    res += 'see squad (get squad <squad>)\n';
+    res += 'see all squad (get squad)\n';
+    res += 'help\n';
+    if (message.member.hasPermission('ADMINISTRATOR') || message.member.hasPermission('MANAGE_CHANNELS') || message.member.hasPermission('MANAGE_GUILD')){
+      res += 'insert name (add <name> <squad>)\n';
+      res += 'remove name (remove <name> <squad>)\n';
+      res += 'clear all (clearall)\n';
+      res += 'clear squad (clear <squad>)\n';
+      res += 'add squad (add squad <squad>)\n';
+      res += 'remove squad (remove squad <squad>)\n';
+      res += 'start recording (start "<opsname>")\n';
+      res += 'stop recording (stop "<opsname>")\n';
+      res += 'stop all (stop)\n';
+    }
+    message.channel.send(res);
+} else if(command === 'join'){ // insert name (join <squad>)
+    let squad = args[0];
+    let name = cleanName(message.author.username);
+    if(list_of_squads.indexOf(squad) !== -1){
+      for (let i = 0; i < list_of_names.length; i++) {
+        if(list_of_names[i]['name'] === name){
+          message.channel.send(`You are in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !leave ${list_of_names[i]['squad']}`);
+          return;
+        }
+      }
+      list_of_names.push({'name':name,'squad':squad});
+      message.channel.send(`Added to squad ${squad}`);
+    }else{
+      message.channel.send(`There is no squad ${squad} :(`);
+    }
+  } else if(command === 'leave'){ // remove name (leave <squad>)
+    let squad = args[0];
+    let name = cleanName(message.author.username);
+    for (let i = 0; i < list_of_names.length; i++) {
+      if(list_of_names[i]['name'] === name){
+
+        message.channel.send(`You are in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !leave ${list_of_names[i]['squad']}`);
+        return;
+      }
+    }
+} else if(command === 'get' && args[0] === 'squad' && args[1] !== undefined){ // see squad (get squad <squad>)
+
+  } else if(command === 'get' && args[0] === 'squad'){ // see all squad (get squad)
+    let res = 'These are the squad:\n';
+    for (let i = 0; i < list_of_squads.length; i++) {
+      res += `${list_of_squads[i]}\n`;
+    }
+    message.channel.send(res);
+  } else if(command === 'add' && args[0] === 'squad'){ // add squad (add squad <squad>)
+    if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
+      message.channel.send("Hey! You don't the permission to do that!");
+      return;
+    }
+    let squad = args[1];
+    list_of_squads.push(squad);
+    message.channel.send(`Added squad ${squad}`);
+  } else if(command === 'add'){ // insert name (add <name> <squad>)
+    if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
+      message.channel.send("Hey! You don't the permission to do that!");
+      return;
+    }
+    let squad = args[1];
+    let name = cleanName(args[0]);
+    if(list_of_squads.indexOf(squad) !== -1){
+      for (let i = 0; i < list_of_names.length; i++) {
+        if(list_of_names[i]['name'] === name){
+          message.channel.send(`${name} is in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !remove ${name} ${list_of_names[i]['squad']}`);
+          return;
+        }
+      }
+      list_of_names.push({'name':name,'squad':squad});
+      message.channel.send(`Added to squad ${squad}`);
+    }else{
+      message.channel.send(`There is no squad ${squad} :(`);
+    }
+  } else if(command === 'clear' && args[0] === 'all'){ // clear all (clear all)
+    if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
+      message.channel.send("Hey! You don't the permission to do that!");
+      return;
+    }
+    for (let i = 0; i < list_of_squads.length; i++) {
+      message.channel.send(cleanSquad(list_of_squads[i]));
+    }
+    list_of_names=[];
+    list_of_ids=[];
+  } else if(command === 'clear'){ // clear squad (clear <squad>)
+    if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
+      message.channel.send("Hey! You don't the permission to do that!");
+      return;
+    }
+    let name = args[1];
+    message.channel.send(cleanSquad(name));
+/*   } else if(command === 'stop' && args[0] === 'all'){ // stop all (stop)
+    if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
+      message.channel.send("Hey! You don't the permission to do that!");
+      return;
+    } */
+  } else if(command === 'stop'){ // stop recording (stop "<opsname>")
+    if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
+      message.channel.send("Hey! You don't the permission to do that!");
+      return;
+    }
+    let name = args[0];
+} else if(command === 'start'){ // start recording (start "<opsname>")
+    // TODO: add type_experience as args
+    // TODO: add file to save the log of the ops
+    if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
+      message.channel.send("Hey! You don't the permission to do that!");
+      return;
+    }
+    main();
+  } else if(command === 'remove' && args[0] === 'squad'){ // remove squad (remove squad <squad>)
+    if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
+      message.channel.send("Hey! You don't the permission to do that!");
+      return;
+    }
+    let name = args[1];
+    if(list_of_squads.indexOf(squad) !== -1){
+      list_of_squads.splice(list_of_squads.indexOf(squad));
+      message = `Removed squad ${squad}\n`
+      message.channel.send(cleanSquad(name));
+    }else{
+      message = `There is no squad ${squad}`;
+    }
+  } else if(command === 'remove'){ // remove name (remove <name> <squad>)
+    if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
+      message.channel.send("Hey! You don't the permission to do that!");
+      return;
+    }
+    let name = args[0];
+    let squad = args[1];
+    for (let i = 0; i < list_of_names.length; i++) {
+      if(list_of_names[i]['name'] === name && list_of_names[i]['squad'] === squad){
+        list_of_names.splice(list_of_names.indexOf(squad));
+        message.channel.send(`${name} was removed from the ${list_of_names[i]['squad']} squad`);
+      }else if(list_of_names[i]['name'] === name && list_of_names[i]['squad'] !== squad){
+        message.channel.send(`${name} is not in the ${list_of_names[i]['squad']} squad, if you want to remove ${name} type: !remove ${name} ${list_of_names[i]['squad']}`);
+        return;
+      }else if(list_of_names[i]['name'] !== name && list_of_names[i]['squad'] === squad){
+        message.channel.send(`There is no ${name} in the ${list_of_names[i]['squad']} squad. Check again the name, please`);
+        return;
+      }else{
+        message.channel.send(`What are you writing? Please chack again`);
+        return;
+      }
+    }
+  }else{
+    message.channel.send("Sorry I didn't understand, can you repeat, please? Or type !help for the list of commands");
+  }
+})
+
+// TODO: made export
+function cleanName(name){
+  name = name.toLowerCase();
+  name = name.substring(name.indexOf('@') + 1);
+  name = name.substring(name.indexOf(']') + 1);
+  return name.trim()
+}
+
+function cleanSquad(squad){
+  let message = '';
+  if(list_of_squads.indexOf(squad) !== -1){
+    message = `Cleaned squad ${squad}\n`
+    for (let i = 0; i < list_of_names.length; i++) {
+      message += 'These players are without a squad:\n'
+      if(list_of_names[i]['squad'] === squad){
+        message += `${list_of_names[i]['squad']}\n`
+      }
+    }
+  }else{
+    message = `There is no squad ${squad}`;
+  }
+  return message;
+}
+
+client.login(process.env.BOT_TOKEN)
 
 // list of types of experience
 const type_gain_experience = {
