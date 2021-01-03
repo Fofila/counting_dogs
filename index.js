@@ -1,3 +1,4 @@
+const utils = require("./utils");
 const dotenv = require('dotenv');
 const WebSocket = require('ws');
 const got = require('got');
@@ -171,7 +172,7 @@ if(command === 'ping'){ // ping the server
     message.channel.send(res);
   } else if(command === 'join'){ // insert name (join <squad>)
     let squad = args[0];
-    let name = cleanName(message.author.username);
+    let name = utils.clearName(message.author.username);
     if(list_of_squads.indexOf(squad) !== -1){
       for (let i = 0; i < list_of_names.length; i++) {
         if(list_of_names[i]['name'] === name){
@@ -186,7 +187,7 @@ if(command === 'ping'){ // ping the server
     }
 } else if(command === 'leave'){ // remove name (leave <squad>)
     let squad = args[0];
-    let name = cleanName(message.author.username);
+    let name = utils.clearName(message.author.username);
     for (let i = 0; i < list_of_names.length; i++) {
       if(list_of_names[i]['name'] === name){
 
@@ -228,7 +229,7 @@ if(command === 'ping'){ // ping the server
       return;
     }
     let squad = args[1];
-    let name = cleanName(args[0]);
+    let name = utils.clearName(args[0]);
     if(list_of_squads.indexOf(squad) !== -1){
       for (let i = 0; i < list_of_names.length; i++) {
         if(list_of_names[i]['name'] === name){
@@ -247,17 +248,17 @@ if(command === 'ping'){ // ping the server
       return;
     }
     for (let i = 0; i < list_of_squads.length; i++) {
-      message.channel.send(cleanSquad(list_of_squads[i]));
+      message.channel.send(utils.clearSquad(list_of_squads[i], list_of_squads, list_of_names));
     }
-    list_of_names=[];
-    list_of_ids=[];
+    // TODO: empty list_of_names=[];
+    // TODO: empty list_of_ids=[];
   } else if(command === 'clear'){ // clear squad (clear <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     }
     let name = args[1];
-    message.channel.send(cleanSquad(name));
+    message.channel.send(utils.clearSquad(name, list_of_squads, list_of_names));
 /*   } else if(command === 'stop' && args[0] === 'all'){ // stop all (stop)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
@@ -287,7 +288,7 @@ if(command === 'ping'){ // ping the server
     if(list_of_squads.indexOf(squad) !== -1){
       list_of_squads.splice(list_of_squads.indexOf(squad));
       message = `Removed squad ${squad}\n`
-      message.channel.send(cleanSquad(name));
+      message.channel.send(utils.clearSquad(name, list_of_squads, list_of_names));
     }else{
       message = `There is no squad ${squad}`;
     }
@@ -317,29 +318,6 @@ if(command === 'ping'){ // ping the server
     message.channel.send("Sorry I didn't understand, can you repeat, please? Or type !help for the list of commands");
   }
 })
-
-function cleanName(name){
-  name = name.toLowerCase();
-  name = name.substring(name.indexOf('@') + 1);
-  name = name.substring(name.indexOf(']') + 1);
-  return name.trim()
-}
-
-function cleanSquad(squad){
-  let message = '';
-  if(list_of_squads.indexOf(squad) !== -1){
-    message = `Cleaned squad ${squad}\n`
-    message += 'These players are without a squad:\n'
-    for (let i = 0; i < list_of_names.length; i++) {
-      if(list_of_names[i]['squad'] === squad){
-        message += `${list_of_names[i]['name']}\n`
-      }
-    }
-  }else{
-    message = `There is no squad ${squad}`;
-  }
-  return message;
-}
 
 client.login(process.env.BOT_TOKEN)
 
