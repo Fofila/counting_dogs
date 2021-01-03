@@ -1,4 +1,4 @@
-function stamp(text='...',args={}){
+export function stamp(text='...',args={}){
   let now = new Date()
   let date = `[${now.getDate()}/${now.getMonth()}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}]`
   let str = date+`${user}:${text}`
