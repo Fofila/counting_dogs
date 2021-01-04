@@ -56,7 +56,7 @@ async function populate_names(names){
 /*
   called in "start" command
 */
-async function main(gain_experience_requested=["GainExperience_experience_id_1"]){
+async function main(gain_experience_requested='["GainExperience_experience_id_1"]'){
   let list_of_ids = []
   await populate_names(list_of_names);
   
@@ -131,10 +131,11 @@ function updateValue(dict, value){
 }
 
 // TODO: try to see if it works
-function closeConnection(before = null, after = null, websocket=global.ws){
+function closeConnection(websocket=global.ws, before = null, after = null){
   if(before !== null) before();
+  websocket.onclose = after
   websocket.terminate();
-  if(after !== null)  after();
+  // if(after !== null)  after();
   console.log(utils.stamp_now(), 'Connection closed')
 }
 
@@ -169,8 +170,8 @@ if(command === 'ping'){ // ping the server
       res += 'add squad (add squad <squad>)\n';
       res += 'remove squad (remove squad <squad>)\n';
       res += 'start recording (start "<opsname>")\n';
-      res += 'stop recording (stop "<opsname>")\n';
-      res += 'stop all (stop)\n';
+      res += 'stop recording (stop)\n';
+      // res += 'stop all (stop)\n';
     }
     message.channel.send(res);
   } else if(command === 'join'){ // insert name (join <squad>)
@@ -268,27 +269,33 @@ if(command === 'ping'){ // ping the server
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     } */
-} else if(command === 'stop'){ // stop recording (stop "<opsname>")
+} else if(command === 'stop'){ // stop recording (stop)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     }
     let name = args[0];
-    closeConnection(global.ws);
-} else if(command === 'start'){ // start recording (start "<opsname>")
-    let record_name = args[0];
-    let exp_type = [];
-    for (let i = 1; i < args.length; i++) {
-      exp_type.push(`GainExperience_experience_id_${args[i]}`);
-    }
+    closeConnection(global.ws, null, function(){
+      console.log('After!')
+    });
+  } else if(command === 'start'){ // start recording (start "<opsname>")
     // TODO: add type_experience as args
     // TODO: add file to save the log of the ops
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     }
-    console.log(exp_type);
-    main(JSON.stringify(exp_type));
+    let record_name = args[0];
+    if(args.length > 1){
+      let exp_type = [];
+      for (let i = 1; i < args.length; i++) {
+        exp_type.push(`GainExperience_experience_id_${args[i]}`);
+      }
+      console.log(exp_type);
+      main(JSON.stringify(exp_type));
+    }else{
+      main(JSON.stringify());
+    }
   } else if(command === 'remove' && args[0] === 'squad'){ // remove squad (remove squad <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
@@ -324,8 +331,7 @@ if(command === 'ping'){ // ping the server
         return;
       }
     }
-  }else if(command === 'dict_of_values'){
-    
+  }else if(command === 'dict_of_values'){  
     message.channel.send(JSON.stringify(dict_of_values));
   }else if(command === 'list_of_names'){
     message.channel.send(JSON.stringify(list_of_names));
