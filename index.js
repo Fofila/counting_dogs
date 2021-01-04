@@ -301,7 +301,7 @@ if(command === 'ping'){ // ping the server
       for (let i = 0; i < list_of_names.length; i++) {
         if(list_of_names[i]['name'] === name){
           embed.setTitle(`Warning`).setColor(0xffff00)
-          embed.setDescription(`${name} is in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !remove ${name} ${list_of_names[i]['squad']}`);
+          embed.setDescription(`${name} is in the ${list_of_names[i]['squad']} squad, you have to remove from the other squad: !remove ${name} ${list_of_names[i]['squad']}`);
           message.channel.send(embed);
           return;
         }
@@ -431,6 +431,7 @@ if(command === 'ping'){ // ping the server
       msg.setDescription("Hey! You don't the permission to do that!");
       main();
     }
+    message.channel.send(msg);
   } else if(command === 'remove' && args[0] === 'squad'){ // remove squad (remove squad <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
