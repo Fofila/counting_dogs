@@ -147,7 +147,7 @@ client.on('message', message => {
   // console.log(utils.stamp_now(), message.author.username)
   const args = message.content.slice(prefix.length).split(/ +/);
   const command = args.shift().toLowerCase();
-  // console.log(utils.stamp_now(), args)
+  // console.log(utils.stamp_now(), command, args)
 
 if(command === 'ping'){ // ping the server
     // TODO: make a real ping
@@ -317,11 +317,12 @@ if(command === 'ping'){ // ping the server
       }
     }
   }else if(command === 'dict_of_values'){
-    message.channel.send(JSON.toString(dict_of_values));
+    
+    message.channel.send(JSON.stringify(dict_of_values));
   }else if(command === 'list_of_names'){
-    message.channel.send(JSON.toString(list_of_names));
+    message.channel.send(JSON.stringify(list_of_names));
   }else if(command === 'list_of_squads'){
-    message.channel.send(JSON.toString(list_of_squads));
+    message.channel.send(JSON.stringify(list_of_squads));
   }else{
     message.channel.send("Sorry I didn't understand, can you repeat, please? Or type !help for the list of commands");
   }
