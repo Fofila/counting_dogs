@@ -27,6 +27,7 @@ exports.clearSquad = (squad, squads, names) => {
     for (let i = 0; i < names.length; i++) {
       if(names[i]['squad'] === squad){
         text += `${names[i]['name']}\n`
+        names[i]['squad'] = null
       }
     }
   }else{
