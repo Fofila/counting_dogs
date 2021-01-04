@@ -9,14 +9,13 @@ const logger = require('pino')({
   "timestamp":false
 })
 
-const list_of_names = [];
-const dict_of_values = {};
-const prefix = '.';
-const list_of_squads = [];
-const global = {};
-
 require('dotenv').config();
 
+const list_of_names = [];
+const dict_of_values = {};
+const list_of_squads = [];
+const global = {};
+const prefix = process.env.DISCORD_COMMAND_PREFIX;
 
 /*
 given the name of the player, the info(params) needed and the dictionary you want to populate
@@ -232,8 +231,14 @@ if(command === 'ping'){ // ping the server
   } else if(command === 'get' && args[0] === 'squad' && args[1] !== undefined){ // see squad (get squad <squad>)
     let squad = args[1];
     let res = '';
+    let number = 0
+    try {
+      number = utils.getSquad(list_of_names)[squad].length
+    } catch (error) {
+      number = 0
+    }
     const embed = new Discord.MessageEmbed()
-      .setTitle(`Squad ${squad} ${utils.getSquad(list_of_names)[squad].length}/12`)
+      .setTitle(`Squad ${squad} ${number}/12`)
       .setColor(0xffffff)
       
     if(list_of_squads.indexOf(squad) !== -1){
@@ -291,6 +296,7 @@ if(command === 'ping'){ // ping the server
     }
     let squad = args[1];
     let name = utils.clearName(args[0]);
+    const embed = new Discord.MessageEmbed();
     if(list_of_squads.indexOf(squad) !== -1){
       for (let i = 0; i < list_of_names.length; i++) {
         if(list_of_names[i]['name'] === name){
@@ -314,10 +320,11 @@ if(command === 'ping'){ // ping the server
         embed.setTitle(`Warning`).setColor(0xffff00)
         embed.setDescription(`The ${squad} squad is full :(`);
       }
-      message.channel.send(embed);
     }else{
-      message.channel.send(`There is no squad ${squad} :(`);
+      embed.setTitle(`Warning`).setColor(0xffff00)
+      embed.setDescription(`There is no squad ${squad} :(`);
     }
+    message.channel.send(embed);
   } else if(command === 'clear' && args[0] === 'all'){ // clear all (clear all)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
@@ -442,11 +449,11 @@ if(command === 'ping'){ // ping the server
         .setColor(0xffffff)
       message.channel.send(msg);
       let clean_msg = utils.clearSquad(name, list_of_squads, list_of_names)
-      let msg = new Discord.MessageEmbed()
+      let msg1 = new Discord.MessageEmbed()
         .setTitle(clean_msg.title)
         .setColor(clean_msg.color)
-      msg.setDescription(clean_msg.text);
-      message.channel.send(msg);
+      msg1.setDescription(clean_msg.text);
+      message.channel.send(msg1);
     }else{
       message = `There is no squad ${squad}`;
     }
@@ -462,10 +469,11 @@ if(command === 'ping'){ // ping the server
     let name = args[0];
     let squad = args[1];
     for (let i = 0; i < list_of_names.length; i++) {
+      console.log(name, squad, list_of_names[i]['name'], list_of_names[i]['squad'])
       if(list_of_names[i]['name'] === name && list_of_names[i]['squad'] === squad){
         list_of_names.splice(list_of_names.indexOf(squad));
         let msg = new Discord.MessageEmbed()
-          .setTitle(`${name} was removed from the ${list_of_names[i]['squad']} squad`)
+          .setTitle(`${name} was removed from the ${squad} squad`)
           .setColor(0xffffff)
         message.channel.send(msg);
       }else if(list_of_names[i]['name'] === name && list_of_names[i]['squad'] !== squad){
