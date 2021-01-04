@@ -68,6 +68,7 @@ exports.toHtmlTable = (title, dict, slug_exp) => {
         throw err;
     }
     console.log(exports.stamp_now(),"HTML file is saved.");
+    return `${title}.html`;
   });
 }
 
