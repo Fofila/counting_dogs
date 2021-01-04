@@ -354,7 +354,7 @@ if(command === 'ping'){ // ping the server
       message.channel.send(error);
       return;
     }
-    let name = args[1];
+    let name = args[0];
     let clean_msg = utils.clearSquad(name, list_of_squads, list_of_names)
     let msg = new Discord.MessageEmbed()
       .setTitle(clean_msg.title)
