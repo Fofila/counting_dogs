@@ -285,7 +285,10 @@ if(command === 'ping'){ // ping the server
     }else{
       let squad = args[1];
       list_of_squads.push(squad);
-      message.channel.send(`Added squad ${squad}`);
+      const msg = new Discord.MessageEmbed()
+        .setTitle(`Added squad ${squad}`)
+        .setColor(0x00ff00)
+      message.channel.send(msg);
     }
   } else if(command === 'add'){ // insert name (add <name> <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
