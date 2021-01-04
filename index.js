@@ -4,6 +4,9 @@ const WebSocket = require('ws');
 const got = require('got');
 const Discord = require('discord.js');
 const client = new Discord.Client();
+const logger = require('pino')({
+  "timestamp":false
+})
 
 const list_of_names = [];
 const dict_of_values = {};
@@ -51,14 +54,13 @@ async function populate_names(names){
 }
 
 /*
-the first function (needed for the async hell)
-TODO: Not used now! Moved this code in start ops
+  called in "start" command
 */
 async function main(gain_experience_requested=["GainExperience_experience_id_1"]){
   let list_of_ids = []
   await populate_names(list_of_names);
   
-  console.log(utils.stamp_now(), dict_of_values);
+  // console.log(utils.stamp_now(), dict_of_values);
 
   global.ws = await createWSConnection(`wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.PS2_TOKEN}`, function(){
     console.log(utils.stamp_now(), dict_of_values);
@@ -70,10 +72,10 @@ async function main(gain_experience_requested=["GainExperience_experience_id_1"]
     for (const id in dict_of_values) {
       list_of_ids.push(id);
     }
-    console.info('Connection to PS2 server open!')
+    console.info(utils.stamp_now(),'Connection to PS2 server open!')
     // ws.send('{"action":"clearSubscribe","all":"true","service":"event"}')
     let message = `{"service":"event","action":"subscribe","characters":[${list_of_ids}],"eventNames":${gain_experience_requested}}`;
-    // console.log(utils.stamp_now(), message);
+    console.log(utils.stamp_now(), message);
     global.ws.send(message)
   }
 
@@ -274,13 +276,19 @@ if(command === 'ping'){ // ping the server
     let name = args[0];
     closeConnection(global.ws);
 } else if(command === 'start'){ // start recording (start "<opsname>")
+    let record_name = args[0];
+    let exp_type = [];
+    for (let i = 1; i < args.length; i++) {
+      exp_type.push(`GainExperience_experience_id_${args[i]}`);
+    }
     // TODO: add type_experience as args
     // TODO: add file to save the log of the ops
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     }
-    main('["GainExperience_experience_id_1","GainExperience_experience_id_4","GainExperience_experience_id_5","GainExperience_experience_id_7"]');
+    console.log(exp_type);
+    main(JSON.stringify(exp_type));
   } else if(command === 'remove' && args[0] === 'squad'){ // remove squad (remove squad <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
