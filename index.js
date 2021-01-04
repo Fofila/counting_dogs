@@ -184,7 +184,6 @@ if(command === 'ping'){ // ping the server
     embed.setDescription(res);
     message.channel.send(embed);
   } else if(command === 'join'){ // insert name (join <squad>)
-    // TODO: add limit to 12
     let squad = args[0];
     let name = utils.clearName(message.author.username);
     const embed = new Discord.MessageEmbed()
@@ -280,8 +279,11 @@ if(command === 'ping'){ // ping the server
     message.channel.send(`Added squad ${squad}`);
   } else if(command === 'add'){ // insert name (add <name> <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
-      message.channel.send("Hey! You don't the permission to do that!");
-      return;
+      const error = new Discord.MessageEmbed()
+        .setTitle(`Permission error`)
+        .setColor(0xff0000)
+      error.setDescription("Hey! You don't the permission to do that!");
+      message.channel.send(error);
     }
     // TODO: add limit to 12
     let squad = args[1];
@@ -300,7 +302,11 @@ if(command === 'ping'){ // ping the server
     }
   } else if(command === 'clear' && args[0] === 'all'){ // clear all (clear all)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
-      message.channel.send("Hey! You don't the permission to do that!");
+      const error = new Discord.MessageEmbed()
+        .setTitle(`Permission error`)
+        .setColor(0xff0000)
+      error.setDescription("Hey! You don't the permission to do that!");
+      message.channel.send(error);
       return;
     }
     for (let i = 0; i < list_of_squads.length; i++) {
@@ -311,19 +317,31 @@ if(command === 'ping'){ // ping the server
     }
   } else if(command === 'clear'){ // clear squad (clear <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
-      message.channel.send("Hey! You don't the permission to do that!");
+      const error = new Discord.MessageEmbed()
+        .setTitle(`Permission error`)
+        .setColor(0xff0000)
+      error.setDescription("Hey! You don't the permission to do that!");
+      message.channel.send(error);
       return;
     }
     let name = args[1];
     message.channel.send(utils.clearSquad(name, list_of_squads, list_of_names));
 /*   } else if(command === 'stop' && args[0] === 'all'){ // stop all (stop)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
-      message.channel.send("Hey! You don't the permission to do that!");
+      const error = new Discord.MessageEmbed()
+        .setTitle(`Permission error`)
+        .setColor(0xff0000)
+      error.setDescription("Hey! You don't the permission to do that!");
+      message.channel.send(error);
       return;
     } */
   } else if(command === 'stop'){ // stop recording (stop)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
-      message.channel.send("Hey! You don't the permission to do that!");
+      const error = new Discord.MessageEmbed()
+        .setTitle(`Permission error`)
+        .setColor(0xff0000)
+      error.setDescription("Hey! You don't the permission to do that!");
+      message.channel.send(error);
       return;
     }
     closeConnection(global.ws, null, function(){
@@ -337,7 +355,11 @@ if(command === 'ping'){ // ping the server
     });
   } else if(command === 'start'){ // start recording (start "<opsname>")
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
-      message.channel.send("Hey! You don't the permission to do that!");
+      const error = new Discord.MessageEmbed()
+        .setTitle(`Permission error`)
+        .setColor(0xff0000)
+      error.setDescription("Hey! You don't the permission to do that!");
+      message.channel.send(error);
       return;
     }
     if(args[0] !== undefined){
@@ -361,7 +383,11 @@ if(command === 'ping'){ // ping the server
     }
   } else if(command === 'remove' && args[0] === 'squad'){ // remove squad (remove squad <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
-      message.channel.send("Hey! You don't the permission to do that!");
+      const error = new Discord.MessageEmbed()
+        .setTitle(`Permission error`)
+        .setColor(0xff0000)
+      error.setDescription("Hey! You don't the permission to do that!");
+      message.channel.send(error);
       return;
     }
     let name = args[1];
@@ -374,7 +400,11 @@ if(command === 'ping'){ // ping the server
     }
   } else if(command === 'remove'){ // remove name (remove <name> <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
-      message.channel.send("Hey! You don't the permission to do that!");
+      const error = new Discord.MessageEmbed()
+        .setTitle(`Permission error`)
+        .setColor(0xff0000)
+      error.setDescription("Hey! You don't the permission to do that!");
+      message.channel.send(error);
       return;
     }
     let name = args[0];
