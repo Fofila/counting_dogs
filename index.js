@@ -214,18 +214,21 @@ if(command === 'ping'){ // ping the server
       embed.setDescription(`There is no squad ${squad} :(`);
     }
     message.channel.send(embed);
-} else if(command === 'leave'){ // remove name (leave <squad>)
+  } else if(command === 'leave'){ // remove name (leave <squad>)
     let name = utils.clearName(message.author.username);
     for (let i = 0; i < list_of_names.length; i++) {
       if(list_of_names[i]['name'] === name){
+        let squad = list_of_names[i]['squad']
         list_of_names.splice(i)
-        // TODO: make message
-        message.channel.send(`You are in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !leave ${list_of_names[i]['squad']}`);
+        const msg = new Discord.MessageEmbed()
+          .setTitle(`Leaved squad`)
+          .setColor(0x00ff00)
+        msg.setDescription(`You left ${squad}`);
+        message.channel.send(error);
         return;
       }
     }
   } else if(command === 'get' && args[0] === 'squad' && args[1] !== undefined){ // see squad (get squad <squad>)
-    console.log(utils.getSquad(list_of_names), utils.getSquad(list_of_names)['A'], utils.getSquad(list_of_names)['A'].length);
     let squad = args[1];
     let res = '';
     const embed = new Discord.MessageEmbed()
