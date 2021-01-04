@@ -224,7 +224,7 @@ if(command === 'ping'){ // ping the server
           .setTitle(`Leaved squad`)
           .setColor(0x00ff00)
         msg.setDescription(`You left ${squad}`);
-        message.channel.send(error);
+        message.channel.send(msg);
         return;
       }
     }
@@ -492,7 +492,7 @@ if(command === 'ping'){ // ping the server
         return;
       }else{
         let msg = new Discord.MessageEmbed()
-        .setTitle(`What are you writing? Please chack again`)
+        .setTitle(`What are you writing? Please check again`)
         .setColor(0xff0000)
         message.channel.send(msg);
         return;
