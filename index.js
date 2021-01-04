@@ -4,6 +4,7 @@ const WebSocket = require('ws');
 const got = require('got');
 const Discord = require('discord.js');
 const client = new Discord.Client();
+const fs = require('fs');
 const logger = require('pino')({
   "timestamp":false
 })
@@ -21,13 +22,18 @@ require('dotenv').config();
 given the name of the player, the info(params) needed and the dictionary you want to populate
 call the PS2 API and add the response to the dict
 */
-async function setIDfromName(name=null, params="&c:show=character_id", dict=dict_of_values){
+async function setIDfromName(name=null, params="&c:show=character_id", dict=dict_of_values, squad='', columns=[]){
   // TODO: if name is empty crash
   try {
     let response = await got(`http://census.daybreakgames.com/get/ps2:v2/character/?name.first_lower=${name}${params}`);
-    console.log(utils.stamp_now(), JSON.parse(response.body).character_list[0].character_id)
-    dict[JSON.parse(response.body).character_list[0].character_id] = {}
-    dict[JSON.parse(response.body).character_list[0].character_id]["name"] = name;
+    let player = JSON.parse(response.body).character_list[0];
+    // console.log(utils.stamp_now(), player)
+    dict[player.character_id] = {}
+    dict[player.character_id]["name"] = player.name.first;
+    dict[player.character_id]["squad"] = squad;
+    for (let i = 0; i < columns.length; i++) {
+      dict[player.character_id][columns[i]] = 0
+    }
     console.log(utils.stamp_now(), dict);
   } catch (error) {
     console.log(utils.stamp_now(), error);
@@ -45,20 +51,20 @@ async function createWSConnection(url_to_ws, onclose){
 }
 
 /*
-from a list of names get the ID and populate
+from a list of names get the ID and populate the obj with the exp requested
 */
-async function populate_names(names){
+async function populate_names(names, gain_experience_requested){
   for (let i = 0; i < names.length; i++) {
-    setIDfromName(names[i]['name']);  
+    setIDfromName(names[i]['name'], '', dict_of_values, names[i]['squad'], gain_experience_requested);  
   }
 }
 
 /*
   called in "start" command
 */
-async function main(gain_experience_requested='["GainExperience_experience_id_1"]'){
+async function main(gain_experience_requested=["GainExperience_experience_id_1"]){
   let list_of_ids = []
-  await populate_names(list_of_names);
+  await populate_names(list_of_names, gain_experience_requested);
   
   // console.log(utils.stamp_now(), dict_of_values);
 
@@ -74,7 +80,7 @@ async function main(gain_experience_requested='["GainExperience_experience_id_1"
     }
     console.info(utils.stamp_now(),'Connection to PS2 server open!')
     // ws.send('{"action":"clearSubscribe","all":"true","service":"event"}')
-    let message = `{"service":"event","action":"subscribe","characters":[${list_of_ids}],"eventNames":${gain_experience_requested}}`;
+    let message = `{"service":"event","action":"subscribe","characters":[${list_of_ids}],"eventNames":${JSON.stringify(gain_experience_requested)}}`;
     console.log(utils.stamp_now(), message);
     global.ws.send(message)
   }
@@ -156,6 +162,7 @@ if(command === 'ping'){ // ping the server
     // TODO: make a real ping
     message.channel.send('pong!');
   } else if(command === 'help'){ // list commands
+    // TODO: update commands
     let res = "These are all the commands you can type:\n"
     res += 'insert name (join <squad>)\n';
     res += 'remove name (leave <squad>)\n';
@@ -175,6 +182,7 @@ if(command === 'ping'){ // ping the server
     }
     message.channel.send(res);
   } else if(command === 'join'){ // insert name (join <squad>)
+    // TODO: add limit to 12
     let squad = args[0];
     let name = utils.clearName(message.author.username);
     if(list_of_squads.indexOf(squad) !== -1){
@@ -232,6 +240,7 @@ if(command === 'ping'){ // ping the server
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     }
+    // TODO: add limit to 12
     let squad = args[1];
     let name = utils.clearName(args[0]);
     if(list_of_squads.indexOf(squad) !== -1){
@@ -269,32 +278,43 @@ if(command === 'ping'){ // ping the server
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     } */
-} else if(command === 'stop'){ // stop recording (stop)
+  } else if(command === 'stop'){ // stop recording (stop)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     }
-    let name = args[0];
     closeConnection(global.ws, null, function(){
-      console.log('After!')
+      fs.writeFile(`${global.ops_name}.json`, JSON.stringify(dict_of_values), (err) => {
+        if (err) {
+            throw err;
+        }
+        console.log(utils.stamp_now(),"JSON data is saved.");
+      });
+      utils.toHtmlTable(global.ops_name,dict_of_values);
     });
   } else if(command === 'start'){ // start recording (start "<opsname>")
-    // TODO: add type_experience as args
-    // TODO: add file to save the log of the ops
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       message.channel.send("Hey! You don't the permission to do that!");
       return;
     }
-    let record_name = args[0];
+    if(args[0] !== undefined){
+      global.ops_name = args[0];
+    } else {
+      let now = new Date();
+      let date = (('' + now.getUTCDate()).length === 1) ? '0'+now.getUTCDate() : now.getUTCDate()
+      let month = (('' + now.getUTCMonth()).length === 1) ? '0'+(now.getUTCMonth()+1) : now.getUTCMonth()+1
+      global.ops_name = `${now.getUTCFullYear()}${month}${date}_ops`
+    }
+
     if(args.length > 1){
       let exp_type = [];
-      for (let i = 1; i < args.length; i++) {
+      for (let i = (args.length - 1); i > 0; i--) {
         exp_type.push(`GainExperience_experience_id_${args[i]}`);
       }
       console.log(exp_type);
-      main(JSON.stringify(exp_type));
+      main(exp_type);
     }else{
-      main(JSON.stringify());
+      main();
     }
   } else if(command === 'remove' && args[0] === 'squad'){ // remove squad (remove squad <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
