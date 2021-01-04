@@ -162,7 +162,7 @@ if(command === 'ping'){ // ping the server
     message.channel.send('pong!');
   } else if(command === 'help'){ // list commands
     const embed = new Discord.MessageEmbed()
-      .setTitle(`Commands:`)
+      .setTitle(`Commands`)
       .setColor(0xffffff)
       // TODO: update commands
     let res = 'Join a squad: join <squadname>\n';
@@ -190,8 +190,9 @@ if(command === 'ping'){ // ping the server
     if(list_of_squads.indexOf(squad) !== -1){
       for (let i = 0; i < list_of_names.length; i++) {
         if(list_of_names[i]['name'] === name){
-          embed.setTitle(`Warning:`).setColor(0xffff00)
+          embed.setTitle(`Warning`).setColor(0xffff00)
           embed.setDescription(`You are in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !leave ${list_of_names[i]['squad']}`);
+          message.channel.send(embed);
           return;
         }
       }
@@ -203,14 +204,14 @@ if(command === 'ping'){ // ping the server
       }
       if(number < 12){
         list_of_names.push({'name':name,'squad':squad});
-        embed.setTitle(`Success:`).setColor(0x00ff00);
+        embed.setTitle(`Success`).setColor(0x00ff00);
         embed.setDescription(`You joined ${squad} squad`);
       }else{
-        embed.setTitle(`Warning:`).setColor(0xffff00)
+        embed.setTitle(`Warning`).setColor(0xffff00)
         embed.setDescription(`The ${squad} squad is full :(`);
       }
     }else{
-      embed.setTitle(`Error:`).setColor(0xff0000)
+      embed.setTitle(`Error`).setColor(0xff0000)
       embed.setDescription(`There is no squad ${squad} :(`);
     }
     message.channel.send(embed);
@@ -288,18 +289,32 @@ if(command === 'ping'){ // ping the server
       error.setDescription("Hey! You don't the permission to do that!");
       message.channel.send(error);
     }
-    // TODO: add limit to 12
     let squad = args[1];
     let name = utils.clearName(args[0]);
     if(list_of_squads.indexOf(squad) !== -1){
       for (let i = 0; i < list_of_names.length; i++) {
         if(list_of_names[i]['name'] === name){
-          message.channel.send(`${name} is in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !remove ${name} ${list_of_names[i]['squad']}`);
+          embed.setTitle(`Warning`).setColor(0xffff00)
+          embed.setDescription(`${name} is in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !remove ${name} ${list_of_names[i]['squad']}`);
+          message.channel.send(embed);
           return;
         }
       }
-      list_of_names.push({'name':name,'squad':squad});
-      message.channel.send(`${name} Added to squad ${squad}`);
+      let number = 0
+      try {
+        number = utils.getSquad(list_of_names)[squad].length
+      } catch (error) {
+        number = 0
+      }
+      if(number < 12){
+        list_of_names.push({'name':name,'squad':squad});
+        embed.setTitle(`Success`).setColor(0x00ff00);
+        embed.setDescription(`${name} added to squad ${squad}`);
+      }else{
+        embed.setTitle(`Warning`).setColor(0xffff00)
+        embed.setDescription(`The ${squad} squad is full :(`);
+      }
+      message.channel.send(embed);
     }else{
       message.channel.send(`There is no squad ${squad} :(`);
     }
@@ -313,7 +328,12 @@ if(command === 'ping'){ // ping the server
       return;
     }
     for (let i = 0; i < list_of_squads.length; i++) {
-      message.channel.send(utils.clearSquad(list_of_squads[i], list_of_squads, list_of_names));
+      let clean_msg = utils.clearSquad(list_of_squads[i], list_of_squads, list_of_names)
+      let msg = new Discord.MessageEmbed()
+        .setTitle(clean_msg.title)
+        .setColor(clean_msg.color)
+      msg.setDescription(clean_msg.text);
+      message.channel.send(msg);
     }
     for (let j = 0; j < list_of_names.length; j++) {
       list_of_names.pop()
@@ -328,7 +348,12 @@ if(command === 'ping'){ // ping the server
       return;
     }
     let name = args[1];
-    message.channel.send(utils.clearSquad(name, list_of_squads, list_of_names));
+    let clean_msg = utils.clearSquad(name, list_of_squads, list_of_names)
+    let msg = new Discord.MessageEmbed()
+      .setTitle(clean_msg.title)
+      .setColor(clean_msg.color)
+    msg.setDescription(clean_msg.text);
+    message.channel.send(msg);
 /*   } else if(command === 'stop' && args[0] === 'all'){ // stop all (stop)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
