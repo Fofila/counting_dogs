@@ -19,18 +19,22 @@ exports.clearName = (name) => {
 
 exports.clearSquad = (squad, squads, names) => {
   let message = '';
+  let color = '';
+  let title = '';
   if(squads.indexOf(squad) !== -1){
-    message = `Cleaned squad ${squad}\n`
-    message += 'These players are without a squad:\n'
+    title = `Cleaned squad ${squad}`
+    message = 'These players are without a squad:\n'
     for (let i = 0; i < names.length; i++) {
       if(names[i]['squad'] === squad){
         message += `${names[i]['name']}\n`
       }
     }
   }else{
+    color = 0xff0000;
+    title = 'Error'
     message = `There is no squad ${squad}`;
   }
-  return message;
+  return {message};
 }
 
 exports.toHtmlTable = (title, dict, slug_exp) => {
