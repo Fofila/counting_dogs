@@ -392,9 +392,8 @@ if(command === 'ping'){ // ping the server
           console.log(utils.stamp_now(),"JSON data is saved.");
         });
         let file_html = utils.toHtmlTable(global.ops_name,dict_of_values, type_gain_experience)
-        setTimeout(() => {
-          message.channel.send(new Discord.MessageAttachment(file_html));
-        },8000)
+        // TODO: send html file
+        // message.channel.send(new Discord.MessageAttachment(file_html));
       });
     }
   } else if(command === 'START'){ // start recording (start "<opsname>")
@@ -424,7 +423,7 @@ if(command === 'ping'){ // ping the server
           .setColor(0xffffff)
         if(args[1] === 'ALL'){
           exp_type = type_gain_experience;
-          msg.setDescription(`Starting recording the following all stats`);
+          msg.setDescription(`Starting recording all stats`);
         }else{
           for (let i = (args.length - 1); i > 0; i--) {
             let text = `GainExperience_experience_id_${args[i]}`
@@ -513,13 +512,25 @@ if(command === 'ping'){ // ping the server
         }
       }
     }
-  }else if(command === 'dict_of_values'){  
-    message.channel.send(JSON.stringify(dict_of_values));
-  }else if(command === 'list_of_names'){
-    message.channel.send(JSON.stringify(list_of_names));
-  }else if(command === 'list_of_squads'){
-    message.channel.send(JSON.stringify(list_of_squads));
-  }else{
+  } else if(command === 'SEARCH'){
+    let text = args[0];
+    let results = 'exp_id : type of exp'
+    for(let exp in type_gain_experience){
+      if(type_gain_experience[exp].toUpperCase().indexOf(text) > -1){
+        results += `${exp.substring(exp.lastIndexOf('_') + 1)} : ${type_gain_experience[exp]}\n`
+        if(results.length > 1950) break;
+      }
+    }
+    // TODO: add a limiter to 2000 char of the research and a pager
+    const msg = new Discord.MessageEmbed()
+    .setTitle(`Searching for "${text}"`)
+    .setColor(0xffffff)
+    msg.setDescription(results);
+    message.channel.send(msg);
+    
+  } else if(command === 'STAMP'){
+    message.channel.send(new Discord.MessageAttachment(args[0]));
+  } else{
     message.channel.send("Sorry I didn't understand, can you repeat, please? Or type !help for the list of commands");
   }
 })
