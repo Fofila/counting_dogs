@@ -440,15 +440,15 @@ if(command === 'ping'){ // ping the server
       message.channel.send(error);
       return;
     }
-    let name = args[1];
+    let squad = args[1];
     if(list_of_squads.indexOf(squad) !== -1){
+      let clean_msg = utils.clearSquad(squad, list_of_squads, list_of_names)
       list_of_squads.splice(list_of_squads.indexOf(squad));
-      utils.clearSquad(name, list_of_squads, list_of_names)
       let msg = new Discord.MessageEmbed()
         .setTitle(`Removed squad ${squad}`)
         .setColor(0xffffff)
       message.channel.send(msg);
-      let clean_msg = utils.clearSquad(name, list_of_squads, list_of_names)
+      console.log(clean_msg)
       let msg1 = new Discord.MessageEmbed()
         .setTitle(clean_msg.title)
         .setColor(clean_msg.color)
