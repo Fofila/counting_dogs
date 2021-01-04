@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 exports.stamp_now = (text='...',args={}) => {
   let now = new Date()
   let date = (('' + now.getUTCDate()).length === 1) ? '0'+now.getUTCDate() : now.getUTCDate()
@@ -31,4 +33,29 @@ exports.clearSquad = (squad, squads, names) => {
   return message;
 }
 
-// export {stamp, clearName, clearSquad};
+exports.toHtmlTable = (title, dict) => {
+  // TODO: stamp names and not slug
+  let html = `<html><head><title>${title}</title></head><body><table>`;
+  // TODO: add headers
+  let row = `<tr><th>Player id</th>`
+  for(let header in dict[Object.keys(dict)[0]]){
+    row += `<th>${header}</th>`
+  }
+  row += '</tr>'
+  html += row
+  for(let player_id in dict){
+    let row = `<tr><td>${player_id}</td>`
+    for(let data in dict[player_id]){
+      row += `<td>${dict[player_id][data]}</td>`
+    }
+    row += '</tr>';
+    html += row;
+  }
+  html += '</table></body></html>'
+  fs.writeFile(`${title}.html`, html, (err) => {
+    if (err) {
+        throw err;
+    }
+    console.log(exports.stamp_now(),"HTML file is saved.");
+  });
+}
