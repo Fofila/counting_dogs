@@ -136,7 +136,6 @@ function updateValue(dict, value){
   console.log(utils.stamp_now(), dict)
 }
 
-// TODO: try to see if it works
 function closeConnection(websocket=global.ws, before = null, after = null){
   if(before !== null) before();
   websocket.onclose = after
@@ -162,12 +161,14 @@ if(command === 'ping'){ // ping the server
     // TODO: make a real ping
     message.channel.send('pong!');
   } else if(command === 'help'){ // list commands
-    // TODO: update commands
-    let res = "These are all the commands you can type:\n"
-    res += 'insert name (join <squad>)\n';
-    res += 'remove name (leave <squad>)\n';
-    res += 'see squad (get squad <squad>)\n';
-    res += 'see all squad (get squad)\n';
+    const embed = new Discord.MessageEmbed()
+      .setTitle(`Commands:`)
+      .setColor(0xffffff)
+      // TODO: update commands
+    let res = 'Join a squad: join <squadname>\n';
+    res += 'Leave a squad: leave <squadname>\n';
+    res += 'See members of a squad: get squad <squadname>\n';
+    res += 'see all squads: get squads\n';
     res += 'help\n';
     if (message.member.hasPermission('ADMINISTRATOR') || message.member.hasPermission('MANAGE_CHANNELS') || message.member.hasPermission('MANAGE_GUILD')){
       res += 'insert name (add <name> <squad>)\n';
@@ -180,56 +181,98 @@ if(command === 'ping'){ // ping the server
       res += 'stop recording (stop)\n';
       // res += 'stop all (stop)\n';
     }
-    message.channel.send(res);
+    embed.setDescription(res);
+    message.channel.send(embed);
   } else if(command === 'join'){ // insert name (join <squad>)
     // TODO: add limit to 12
     let squad = args[0];
     let name = utils.clearName(message.author.username);
+    const embed = new Discord.MessageEmbed()
     if(list_of_squads.indexOf(squad) !== -1){
       for (let i = 0; i < list_of_names.length; i++) {
         if(list_of_names[i]['name'] === name){
-          message.channel.send(`You are in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !leave ${list_of_names[i]['squad']}`);
+          embed.setTitle(`Warning:`).setColor(0xffff00)
+          embed.setDescription(`You are in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !leave ${list_of_names[i]['squad']}`);
           return;
         }
       }
-      list_of_names.push({'name':name,'squad':squad});
-      message.channel.send(`Added to squad ${squad}`);
+      let number = 0
+      try {
+        number = utils.getSquad(list_of_names)[squad].length
+      } catch (error) {
+        number = 0
+      }
+      if(number < 12){
+        list_of_names.push({'name':name,'squad':squad});
+        embed.setTitle(`Success:`).setColor(0x00ff00);
+        embed.setDescription(`You joined ${squad} squad`);
+      }else{
+        embed.setTitle(`Warning:`).setColor(0xffff00)
+        embed.setDescription(`The ${squad} squad is full :(`);
+      }
     }else{
-      message.channel.send(`There is no squad ${squad} :(`);
+      embed.setTitle(`Error:`).setColor(0xff0000)
+      embed.setDescription(`There is no squad ${squad} :(`);
     }
+    message.channel.send(embed);
 } else if(command === 'leave'){ // remove name (leave <squad>)
-    let squad = args[0];
     let name = utils.clearName(message.author.username);
     for (let i = 0; i < list_of_names.length; i++) {
       if(list_of_names[i]['name'] === name){
-
+        list_of_names.splice(i)
+        // TODO: make message
         message.channel.send(`You are in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !leave ${list_of_names[i]['squad']}`);
         return;
       }
     }
   } else if(command === 'get' && args[0] === 'squad' && args[1] !== undefined){ // see squad (get squad <squad>)
+    console.log(utils.getSquad(list_of_names), utils.getSquad(list_of_names)['A'], utils.getSquad(list_of_names)['A'].length);
     let squad = args[1];
     let res = '';
+    const embed = new Discord.MessageEmbed()
+      .setTitle(`Squad ${squad} ${utils.getSquad(list_of_names)[squad].length}/12`)
+      .setColor(0xffffff)
+      
     if(list_of_squads.indexOf(squad) !== -1){
-      res += `Squad ${squad} is composed by:\n`
       for (let i = 0; i < list_of_names.length; i++) {
         if(list_of_names[i]['squad'] === squad){
           res += `${list_of_names[i]['name']}\n`
         }
       }
     }else{
+      embed.setColor(0xff0000);
       res = `There is no squad ${squad}`;
     }
-    message.channel.send(res);
-  } else if(command === 'get' && args[0] === 'squad'){ // see all squad (get squad)
-    let res = 'These are the squads:\n';
+    embed.setDescription(res);
+    message.channel.send(embed);
+  } else if(command === 'get' && args[0] === 'squads'){ // see all squad (get squad)
     for (let i = 0; i < list_of_squads.length; i++) {
-      res += `${list_of_squads[i]}\n`;
+      let res = '';
+      let squad = list_of_squads[i];
+      let number = 0
+      try {
+        number = utils.getSquad(list_of_names)[squad].length
+      } catch (error) {
+        number = 0
+      }
+      const embed = new Discord.MessageEmbed()
+        .setTitle(`Squad ${squad} ${number}/12`)
+        .setColor(0xffffff)
+      for (let j = 0; j < list_of_names.length; j++) {
+        if(list_of_names[j]['squad'] === squad){
+          res += `${list_of_names[j]['name']}\n`
+        }
+      }
+      embed.setDescription(res);
+      message.channel.send(embed);
     }
-    message.channel.send(res);
   } else if(command === 'add' && args[0] === 'squad'){ // add squad (add squad <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
-      message.channel.send("Hey! You don't the permission to do that!");
+      const error = new Discord.MessageEmbed()
+        .setTitle(`Permission error`)
+        .setColor(0xff0000)
+      error.setDescription("Hey! You don't the permission to do that!");
+      message.channel.send(error);
       return;
     }
     let squad = args[1];
@@ -290,7 +333,7 @@ if(command === 'ping'){ // ping the server
         }
         console.log(utils.stamp_now(),"JSON data is saved.");
       });
-      utils.toHtmlTable(global.ops_name,dict_of_values);
+      utils.toHtmlTable(global.ops_name,dict_of_values, type_gain_experience);
     });
   } else if(command === 'start'){ // start recording (start "<opsname>")
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
