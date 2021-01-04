@@ -129,10 +129,6 @@ function updateValue(dict, value){
       dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`] = 1
     }
   }
-  
-  console.log(utils.stamp_now(), character_id, type_gain_experience[`GainExperience_experience_id_${value["experience_id"]}`], other_id)
-  
-  console.log(utils.stamp_now(), dict)
 }
 
 function closeConnection(websocket=global.ws, before = null, after = null){
@@ -149,17 +145,13 @@ client.once('ready', () => {
 
 client.on('message', message => {
   if(!message.content.startsWith(prefix) || message.author.bot) return
-  // console.log(utils.stamp_now(), message)
-  //console.log(utils.stamp_now(), message.guild)
-  // console.log(utils.stamp_now(), message.author.username)
-  const args = message.content.slice(prefix.length).split(/ +/);
-  const command = args.shift().toLowerCase();
-  // console.log(utils.stamp_now(), command, args)
+  const args = message.content.toUpperCase().slice(prefix.length).split(/ +/);
+  const command = args.shift();
 
 if(command === 'ping'){ // ping the server
     // TODO: make a real ping
     message.channel.send('pong!');
-  } else if(command === 'help'){ // list commands
+  } else if(command === 'HELP'){ // list commands
     const embed = new Discord.MessageEmbed()
       .setTitle(`Commands`)
       .setColor(0xffffff)
@@ -182,7 +174,7 @@ if(command === 'ping'){ // ping the server
     }
     embed.setDescription(res);
     message.channel.send(embed);
-  } else if(command === 'join'){ // insert name (join <squad>)
+  } else if(command === 'JOIN'){ // insert name (join <squad>)
     let squad = args[0];
     let name = utils.clearName(message.author.username);
     const embed = new Discord.MessageEmbed()
@@ -214,7 +206,7 @@ if(command === 'ping'){ // ping the server
       embed.setDescription(`There is no squad ${squad} :(`);
     }
     message.channel.send(embed);
-  } else if(command === 'leave'){ // remove name (leave <squad>)
+  } else if(command === 'LEAVE'){ // remove name (leave <squad>)
     let name = utils.clearName(message.author.username);
     for (let i = 0; i < list_of_names.length; i++) {
       if(list_of_names[i]['name'] === name){
@@ -228,7 +220,7 @@ if(command === 'ping'){ // ping the server
         return;
       }
     }
-  } else if(command === 'get' && args[0] === 'squad' && args[1] !== undefined){ // see squad (get squad <squad>)
+  } else if(command === 'GET' && args[0] === 'SQUAD' && args[1] !== undefined){ // see squad (get squad <squad>)
     let squad = args[1];
     let res = '';
     let number = 0
@@ -253,7 +245,7 @@ if(command === 'ping'){ // ping the server
     }
     embed.setDescription(res);
     message.channel.send(embed);
-  } else if(command === 'get' && args[0] === 'squads'){ // see all squad (get squad)
+  } else if(command === 'GET' && args[0] === 'SQUADS'){ // see all squad (get squad)
     for (let i = 0; i < list_of_squads.length; i++) {
       let res = '';
       let squad = list_of_squads[i];
@@ -274,7 +266,7 @@ if(command === 'ping'){ // ping the server
       embed.setDescription(res);
       message.channel.send(embed);
     }
-  } else if(command === 'add' && args[0] === 'squad'){ // add squad (add squad <squad>)
+  } else if(command === 'ADD' && args[0] === 'SQUAD'){ // add squad (add squad <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
@@ -290,7 +282,7 @@ if(command === 'ping'){ // ping the server
         .setColor(0x00ff00)
       message.channel.send(msg);
     }
-  } else if(command === 'add'){ // insert name (add <name> <squad>)
+  } else if(command === 'ADD'){ // insert name (add <name> <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
@@ -331,7 +323,7 @@ if(command === 'ping'){ // ping the server
       }
       message.channel.send(embed);
     }
-  } else if(command === 'clear' && args[0] === 'all'){ // clear all (clear all)
+  } else if(command === 'CLEAR' && args[0] === 'ALL'){ // clear all (clear all)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
@@ -352,7 +344,7 @@ if(command === 'ping'){ // ping the server
         list_of_names.pop()
       }
     }
-  } else if(command === 'clear'){ // clear squad (clear <squad>)
+  } else if(command === 'CLEAR'){ // clear squad (clear <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
@@ -378,7 +370,7 @@ if(command === 'ping'){ // ping the server
       message.channel.send(error);
       return;
     } */
-  } else if(command === 'stop'){ // stop recording (stop)
+  } else if(command === 'STOP'){ // stop recording (stop)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
@@ -399,10 +391,13 @@ if(command === 'ping'){ // ping the server
           }
           console.log(utils.stamp_now(),"JSON data is saved.");
         });
-        message.channel.send(new Discord.MessageAttachment(utils.toHtmlTable(global.ops_name,dict_of_values, type_gain_experience)));
+        let file_html = utils.toHtmlTable(global.ops_name,dict_of_values, type_gain_experience)
+        setTimeout(() => {
+          message.channel.send(new Discord.MessageAttachment(file_html));
+        },8000)
       });
     }
-  } else if(command === 'start'){ // start recording (start "<opsname>")
+  } else if(command === 'START'){ // start recording (start "<opsname>")
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
@@ -424,15 +419,20 @@ if(command === 'ping'){ // ping the server
       if(args.length > 1){
         let exp_type = [];
         let list = '';
-        for (let i = (args.length - 1); i > 0; i--) {
-          let text = `GainExperience_experience_id_${args[i]}`
-          exp_type.push(text);
-          list += `${type_gain_experience[text]}\n`
-        }
         const msg = new Discord.MessageEmbed()
           .setTitle(`Record`)
           .setColor(0xffffff)
-        msg.setDescription(`Starting recording the following stat\n${list}`);
+        if(args[1] === 'ALL'){
+          exp_type = type_gain_experience;
+          msg.setDescription(`Starting recording the following all stats`);
+        }else{
+          for (let i = (args.length - 1); i > 0; i--) {
+            let text = `GainExperience_experience_id_${args[i]}`
+            exp_type.push(text);
+            list += `${type_gain_experience[text]}\n`
+          }
+          msg.setDescription(`Starting recording the following stat\n${list}`);
+        }
         message.channel.send(msg);
         main(exp_type);
       }else{
@@ -444,7 +444,7 @@ if(command === 'ping'){ // ping the server
         main();
       }
     }
-  } else if(command === 'remove' && args[0] === 'squad'){ // remove squad (remove squad <squad>)
+  } else if(command === 'REMOVE' && args[0] === 'SQUAD'){ // remove squad (remove squad <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
@@ -471,7 +471,7 @@ if(command === 'ping'){ // ping the server
         message = `There is no squad ${squad}`;
       }
     }
-  } else if(command === 'remove'){ // remove name (remove <name> <squad>)
+  } else if(command === 'REMOVE'){ // remove name (remove <name> <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
