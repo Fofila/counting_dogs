@@ -170,14 +170,14 @@ if(command === 'ping'){ // ping the server
     res += 'see all squads: get squads\n';
     res += 'help\n';
     if (message.member.hasPermission('ADMINISTRATOR') || message.member.hasPermission('MANAGE_CHANNELS') || message.member.hasPermission('MANAGE_GUILD')){
-      res += 'insert name (add <name> <squad>)\n';
-      res += 'remove name (remove <name> <squad>)\n';
-      res += 'clear all (clearall)\n';
-      res += 'clear squad (clear <squad>)\n';
-      res += 'add squad (add squad <squad>)\n';
-      res += 'remove squad (remove squad <squad>)\n';
-      res += 'start recording (start "<opsname>")\n';
-      res += 'stop recording (stop)\n';
+      res += 'insert player: add <name> <squad>\n';
+      res += 'remove player: remove <name> <squad>\n';
+      res += 'empty all squads: clear all\n';
+      res += 'empty squad: clear <squad>\n';
+      res += 'add new squad: add squad <squad>\n';
+      res += 'remove squad: remove squad <squad>\n';
+      res += 'start recording: start <opsname> <id_experience> <id_experience> ...\n';
+      res += 'stop recording: stop\n';
       // res += 'stop all (stop)\n';
     }
     embed.setDescription(res);
@@ -279,94 +279,99 @@ if(command === 'ping'){ // ping the server
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
         .setColor(0xff0000)
-      error.setDescription("Hey! You don't the permission to do that!");
+      error.setDescription("Hey! You don't have the permission to do that!");
       message.channel.send(error);
       return;
+    }else{
+      let squad = args[1];
+      list_of_squads.push(squad);
+      message.channel.send(`Added squad ${squad}`);
     }
-    let squad = args[1];
-    list_of_squads.push(squad);
-    message.channel.send(`Added squad ${squad}`);
   } else if(command === 'add'){ // insert name (add <name> <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
         .setColor(0xff0000)
-      error.setDescription("Hey! You don't the permission to do that!");
+      error.setDescription("Hey! You don't have the permission to do that!");
       message.channel.send(error);
-    }
-    let squad = args[1];
-    let name = utils.clearName(args[0]);
-    const embed = new Discord.MessageEmbed();
-    if(list_of_squads.indexOf(squad) !== -1){
-      for (let i = 0; i < list_of_names.length; i++) {
-        if(list_of_names[i]['name'] === name){
-          embed.setTitle(`Warning`).setColor(0xffff00)
-          embed.setDescription(`${name} is in the ${list_of_names[i]['squad']} squad, you have to remove from the other squad: !remove ${name} ${list_of_names[i]['squad']}`);
-          message.channel.send(embed);
-          return;
+    }else{
+
+      let squad = args[1];
+      let name = utils.clearName(args[0]);
+      const embed = new Discord.MessageEmbed();
+      if(list_of_squads.indexOf(squad) !== -1){
+        for (let i = 0; i < list_of_names.length; i++) {
+          if(list_of_names[i]['name'] === name){
+            embed.setTitle(`Warning`).setColor(0xffff00)
+            embed.setDescription(`${name} is in the ${list_of_names[i]['squad']} squad, you have to remove from the other squad: !remove ${name} ${list_of_names[i]['squad']}`);
+            message.channel.send(embed);
+            return;
+          }
         }
-      }
-      let number = 0
-      try {
-        number = utils.getSquad(list_of_names)[squad].length
-      } catch (error) {
-        number = 0
-      }
-      if(number < 12){
-        list_of_names.push({'name':name,'squad':squad});
-        embed.setTitle(`Success`).setColor(0x00ff00);
-        embed.setDescription(`${name} added to squad ${squad}`);
+        let number = 0
+        try {
+          number = utils.getSquad(list_of_names)[squad].length
+        } catch (error) {
+          number = 0
+        }
+        if(number < 12){
+          list_of_names.push({'name':name,'squad':squad});
+          embed.setTitle(`Success`).setColor(0x00ff00);
+          embed.setDescription(`${name} added to squad ${squad}`);
+        }else{
+          embed.setTitle(`Warning`).setColor(0xffff00)
+          embed.setDescription(`The ${squad} squad is full :(`);
+        }
       }else{
         embed.setTitle(`Warning`).setColor(0xffff00)
-        embed.setDescription(`The ${squad} squad is full :(`);
+        embed.setDescription(`There is no squad ${squad} :(`);
       }
-    }else{
-      embed.setTitle(`Warning`).setColor(0xffff00)
-      embed.setDescription(`There is no squad ${squad} :(`);
+      message.channel.send(embed);
     }
-    message.channel.send(embed);
   } else if(command === 'clear' && args[0] === 'all'){ // clear all (clear all)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
         .setColor(0xff0000)
-      error.setDescription("Hey! You don't the permission to do that!");
+      error.setDescription("Hey! You don't have the permission to do that!");
       message.channel.send(error);
       return;
-    }
-    for (let i = 0; i < list_of_squads.length; i++) {
-      let clean_msg = utils.clearSquad(list_of_squads[i], list_of_squads, list_of_names)
-      let msg = new Discord.MessageEmbed()
+    }else{
+      for (let i = 0; i < list_of_squads.length; i++) {
+        let clean_msg = utils.clearSquad(list_of_squads[i], list_of_squads, list_of_names)
+        let msg = new Discord.MessageEmbed()
         .setTitle(clean_msg.title)
         .setColor(clean_msg.color)
-      msg.setDescription(clean_msg.text);
-      message.channel.send(msg);
-    }
-    for (let j = 0; j < list_of_names.length; j++) {
-      list_of_names.pop()
+        msg.setDescription(clean_msg.text);
+        message.channel.send(msg);
+      }
+      for (let j = 0; j < list_of_names.length; j++) {
+        list_of_names.pop()
+      }
     }
   } else if(command === 'clear'){ // clear squad (clear <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
         .setColor(0xff0000)
-      error.setDescription("Hey! You don't the permission to do that!");
+      error.setDescription("Hey! You don't have the permission to do that!");
       message.channel.send(error);
       return;
+    }else{
+      let name = args[0];
+      let clean_msg = utils.clearSquad(name, list_of_squads, list_of_names)
+      let msg = new Discord.MessageEmbed()
+        .setTitle(clean_msg.title)
+        .setColor(clean_msg.color)
+      msg.setDescription(clean_msg.text);
+      message.channel.send(msg);
     }
-    let name = args[0];
-    let clean_msg = utils.clearSquad(name, list_of_squads, list_of_names)
-    let msg = new Discord.MessageEmbed()
-      .setTitle(clean_msg.title)
-      .setColor(clean_msg.color)
-    msg.setDescription(clean_msg.text);
-    message.channel.send(msg);
 /*   } else if(command === 'stop' && args[0] === 'all'){ // stop all (stop)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
         .setColor(0xff0000)
-      error.setDescription("Hey! You don't the permission to do that!");
+      error.setDescription("Hey! You don't have the permission to do that!");
       message.channel.send(error);
       return;
     } */
@@ -375,128 +380,134 @@ if(command === 'ping'){ // ping the server
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
         .setColor(0xff0000)
-      error.setDescription("Hey! You don't the permission to do that!");
+      error.setDescription("Hey! You don't have the permission to do that!");
       message.channel.send(error);
       return;
-    }
-    closeConnection(global.ws, null, function(){
-      const msg = new Discord.MessageEmbed()
+    }else{
+      closeConnection(global.ws, null, function(){
+        const msg = new Discord.MessageEmbed()
         .setTitle(`Record`)
         .setColor(0xffffff)
-      msg.setDescription("Stats recording stopped");
-      message.channel.send(msg);
-      fs.writeFile(`${global.ops_name}.json`, JSON.stringify(dict_of_values), (err) => {
-        if (err) {
+        msg.setDescription("Stats recording stopped");
+        message.channel.send(msg);
+        fs.writeFile(`${global.ops_name}.json`, JSON.stringify(dict_of_values), (err) => {
+          if (err) {
             throw err;
-        }
-        console.log(utils.stamp_now(),"JSON data is saved.");
+          }
+          console.log(utils.stamp_now(),"JSON data is saved.");
+        });
+        message.channel.send(new Discord.MessageAttachment(utils.toHtmlTable(global.ops_name,dict_of_values, type_gain_experience)));
       });
-      message.channel.send(Discord.MessageAttachment(utils.toHtmlTable(global.ops_name,dict_of_values, type_gain_experience)));
-    });
+    }
   } else if(command === 'start'){ // start recording (start "<opsname>")
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
         .setColor(0xff0000)
-      error.setDescription("Hey! You don't the permission to do that!");
+      error.setDescription("Hey! You don't have the permission to do that!");
       message.channel.send(error);
       return;
-    }
-    if(args[0] !== undefined){
-      global.ops_name = args[0];
-    } else {
-      let now = new Date();
-      let date = (('' + now.getUTCDate()).length === 1) ? '0'+now.getUTCDate() : now.getUTCDate()
-      let month = (('' + now.getUTCMonth()).length === 1) ? '0'+(now.getUTCMonth()+1) : now.getUTCMonth()+1
-      global.ops_name = `${now.getUTCFullYear()}${month}${date}_ops`
-    }
-    
-    if(args.length > 1){
-      let exp_type = [];
-      let list = '';
-      for (let i = (args.length - 1); i > 0; i--) {
-        let text = `GainExperience_experience_id_${args[i]}`
-        exp_type.push(text);
-        list += `${type_gain_experience[text]}\n`
-      }
-      const msg = new Discord.MessageEmbed()
-        .setTitle(`Record`)
-        .setColor(0xffffff)
-      msg.setDescription(`Starting recording the following stat\n${list}`);
-      main(exp_type);
     }else{
-      const msg = new Discord.MessageEmbed()
+
+      if(args[0] !== undefined){
+        global.ops_name = args[0];
+      } else {
+        let now = new Date();
+        let date = (('' + now.getUTCDate()).length === 1) ? '0'+now.getUTCDate() : now.getUTCDate()
+        let month = (('' + now.getUTCMonth()).length === 1) ? '0'+(now.getUTCMonth()+1) : now.getUTCMonth()+1
+        global.ops_name = `${now.getUTCFullYear()}${month}${date}_ops`
+      }
+      
+      if(args.length > 1){
+        let exp_type = [];
+        let list = '';
+        for (let i = (args.length - 1); i > 0; i--) {
+          let text = `GainExperience_experience_id_${args[i]}`
+          exp_type.push(text);
+          list += `${type_gain_experience[text]}\n`
+        }
+        const msg = new Discord.MessageEmbed()
+          .setTitle(`Record`)
+          .setColor(0xffffff)
+        msg.setDescription(`Starting recording the following stat\n${list}`);
+        message.channel.send(msg);
+        main(exp_type);
+      }else{
+        const msg = new Discord.MessageEmbed()
         .setTitle(`Record`)
         .setColor(0xffffff)
-      msg.setDescription("Hey! You don't the permission to do that!");
-      main();
+        msg.setDescription("Starting recording");
+        message.channel.send(msg);
+        main();
+      }
     }
-    message.channel.send(msg);
   } else if(command === 'remove' && args[0] === 'squad'){ // remove squad (remove squad <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
         .setColor(0xff0000)
-      error.setDescription("Hey! You don't the permission to do that!");
+      error.setDescription("Hey! You don't have the permission to do that!");
       message.channel.send(error);
       return;
-    }
-    let squad = args[1];
-    if(list_of_squads.indexOf(squad) !== -1){
-      let clean_msg = utils.clearSquad(squad, list_of_squads, list_of_names)
-      list_of_squads.splice(list_of_squads.indexOf(squad));
-      let msg = new Discord.MessageEmbed()
-        .setTitle(`Removed squad ${squad}`)
-        .setColor(0xffffff)
-      message.channel.send(msg);
-      console.log(clean_msg)
-      let msg1 = new Discord.MessageEmbed()
-        .setTitle(clean_msg.title)
-        .setColor(clean_msg.color)
-      msg1.setDescription(clean_msg.text);
-      message.channel.send(msg1);
-    }else{
-      message = `There is no squad ${squad}`;
+    } else{
+      let squad = args[1];
+      if(list_of_squads.indexOf(squad) !== -1){
+        let clean_msg = utils.clearSquad(squad, list_of_squads, list_of_names)
+        list_of_squads.splice(list_of_squads.indexOf(squad));
+        let msg = new Discord.MessageEmbed()
+          .setTitle(`Removed squad ${squad}`)
+          .setColor(0xffffff)
+        message.channel.send(msg);
+        console.log(clean_msg)
+        let msg1 = new Discord.MessageEmbed()
+          .setTitle(clean_msg.title)
+          .setColor(clean_msg.color)
+        msg1.setDescription(clean_msg.text);
+        message.channel.send(msg1);
+      }else{
+        message = `There is no squad ${squad}`;
+      }
     }
   } else if(command === 'remove'){ // remove name (remove <name> <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
         .setColor(0xff0000)
-      error.setDescription("Hey! You don't the permission to do that!");
+      error.setDescription("Hey! You don't have the permission to do that!");
       message.channel.send(error);
       return;
-    }
-    let name = args[0];
-    let squad = args[1];
-    for (let i = 0; i < list_of_names.length; i++) {
-      console.log(name, squad, list_of_names[i]['name'], list_of_names[i]['squad'])
-      if(list_of_names[i]['name'] === name && list_of_names[i]['squad'] === squad){
-        list_of_names.splice(list_of_names.indexOf(squad));
-        let msg = new Discord.MessageEmbed()
-          .setTitle(`${name} was removed from the ${squad} squad`)
-          .setColor(0xffffff)
-        message.channel.send(msg);
-      }else if(list_of_names[i]['name'] === name && list_of_names[i]['squad'] !== squad){
-        let msg = new Discord.MessageEmbed()
-          .setTitle(`Error`)
+    } else {
+      let name = args[0];
+      let squad = args[1];
+      for (let i = 0; i < list_of_names.length; i++) {
+        console.log(name, squad, list_of_names[i]['name'], list_of_names[i]['squad'])
+        if(list_of_names[i]['name'] === name && list_of_names[i]['squad'] === squad){
+          list_of_names.splice(list_of_names.indexOf(squad));
+          let msg = new Discord.MessageEmbed()
+            .setTitle(`${name} was removed from the ${squad} squad`)
+            .setColor(0xffffff)
+          message.channel.send(msg);
+        }else if(list_of_names[i]['name'] === name && list_of_names[i]['squad'] !== squad){
+          let msg = new Discord.MessageEmbed()
+            .setTitle(`Error`)
+            .setColor(0xff0000)
+            .setDescription(`${name} is not in the ${list_of_names[i]['squad']} squad, if you want to remove ${name} type: !remove ${name} ${list_of_names[i]['squad']}`)
+          message.channel.send(msg);
+          return;
+        }else if(list_of_names[i]['name'] !== name && list_of_names[i]['squad'] === squad){
+          let msg = new Discord.MessageEmbed()
+            .setTitle(`Warning`)
+            .setColor(0xffff00)
+            .setDescription(`There is no ${name} in the ${list_of_names[i]['squad']} squad. Check again the name, please`)
+          message.channel.send(msg);
+          return;
+        }else{
+          let msg = new Discord.MessageEmbed()
+          .setTitle(`What are you writing? Please check again`)
           .setColor(0xff0000)
-          .setDescription(`${name} is not in the ${list_of_names[i]['squad']} squad, if you want to remove ${name} type: !remove ${name} ${list_of_names[i]['squad']}`)
-        message.channel.send(msg);
-        return;
-      }else if(list_of_names[i]['name'] !== name && list_of_names[i]['squad'] === squad){
-        let msg = new Discord.MessageEmbed()
-          .setTitle(`Warning`)
-          .setColor(0xffff00)
-          .setDescription(`There is no ${name} in the ${list_of_names[i]['squad']} squad. Check again the name, please`)
-        message.channel.send(msg);
-        return;
-      }else{
-        let msg = new Discord.MessageEmbed()
-        .setTitle(`What are you writing? Please check again`)
-        .setColor(0xff0000)
-        message.channel.send(msg);
-        return;
+          message.channel.send(msg);
+          return;
+        }
       }
     }
   }else if(command === 'dict_of_values'){  
