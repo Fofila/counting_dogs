@@ -373,13 +373,18 @@ if(command === 'ping'){ // ping the server
       return;
     }
     closeConnection(global.ws, null, function(){
+      const msg = new Discord.MessageEmbed()
+        .setTitle(`Record`)
+        .setColor(0xffffff)
+      msg.setDescription("Stats recording stopped");
+      message.channel.send(msg);
       fs.writeFile(`${global.ops_name}.json`, JSON.stringify(dict_of_values), (err) => {
         if (err) {
             throw err;
         }
         console.log(utils.stamp_now(),"JSON data is saved.");
       });
-      utils.toHtmlTable(global.ops_name,dict_of_values, type_gain_experience);
+      message.channel.send(Discord.MessageAttachment(utils.toHtmlTable(global.ops_name,dict_of_values, type_gain_experience)));
     });
   } else if(command === 'start'){ // start recording (start "<opsname>")
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
@@ -398,15 +403,25 @@ if(command === 'ping'){ // ping the server
       let month = (('' + now.getUTCMonth()).length === 1) ? '0'+(now.getUTCMonth()+1) : now.getUTCMonth()+1
       global.ops_name = `${now.getUTCFullYear()}${month}${date}_ops`
     }
-
+    
     if(args.length > 1){
       let exp_type = [];
+      let list = '';
       for (let i = (args.length - 1); i > 0; i--) {
-        exp_type.push(`GainExperience_experience_id_${args[i]}`);
+        let text = `GainExperience_experience_id_${args[i]}`
+        exp_type.push(text);
+        list += `${type_gain_experience[text]}\n`
       }
-      console.log(exp_type);
+      const msg = new Discord.MessageEmbed()
+        .setTitle(`Record`)
+        .setColor(0xffffff)
+      msg.setDescription(`Starting recording the following stat\n${list}`);
       main(exp_type);
     }else{
+      const msg = new Discord.MessageEmbed()
+        .setTitle(`Record`)
+        .setColor(0xffffff)
+      msg.setDescription("Hey! You don't the permission to do that!");
       main();
     }
   } else if(command === 'remove' && args[0] === 'squad'){ // remove squad (remove squad <squad>)
@@ -421,8 +436,17 @@ if(command === 'ping'){ // ping the server
     let name = args[1];
     if(list_of_squads.indexOf(squad) !== -1){
       list_of_squads.splice(list_of_squads.indexOf(squad));
-      message = `Removed squad ${squad}\n`
-      message.channel.send(utils.clearSquad(name, list_of_squads, list_of_names));
+      utils.clearSquad(name, list_of_squads, list_of_names)
+      let msg = new Discord.MessageEmbed()
+        .setTitle(`Removed squad ${squad}`)
+        .setColor(0xffffff)
+      message.channel.send(msg);
+      let clean_msg = utils.clearSquad(name, list_of_squads, list_of_names)
+      let msg = new Discord.MessageEmbed()
+        .setTitle(clean_msg.title)
+        .setColor(clean_msg.color)
+      msg.setDescription(clean_msg.text);
+      message.channel.send(msg);
     }else{
       message = `There is no squad ${squad}`;
     }
@@ -440,15 +464,29 @@ if(command === 'ping'){ // ping the server
     for (let i = 0; i < list_of_names.length; i++) {
       if(list_of_names[i]['name'] === name && list_of_names[i]['squad'] === squad){
         list_of_names.splice(list_of_names.indexOf(squad));
-        message.channel.send(`${name} was removed from the ${list_of_names[i]['squad']} squad`);
+        let msg = new Discord.MessageEmbed()
+          .setTitle(`${name} was removed from the ${list_of_names[i]['squad']} squad`)
+          .setColor(0xffffff)
+        message.channel.send(msg);
       }else if(list_of_names[i]['name'] === name && list_of_names[i]['squad'] !== squad){
-        message.channel.send(`${name} is not in the ${list_of_names[i]['squad']} squad, if you want to remove ${name} type: !remove ${name} ${list_of_names[i]['squad']}`);
+        let msg = new Discord.MessageEmbed()
+          .setTitle(`Error`)
+          .setColor(0xff0000)
+          .setDescription(`${name} is not in the ${list_of_names[i]['squad']} squad, if you want to remove ${name} type: !remove ${name} ${list_of_names[i]['squad']}`)
+        message.channel.send(msg);
         return;
       }else if(list_of_names[i]['name'] !== name && list_of_names[i]['squad'] === squad){
-        message.channel.send(`There is no ${name} in the ${list_of_names[i]['squad']} squad. Check again the name, please`);
+        let msg = new Discord.MessageEmbed()
+          .setTitle(`Warning`)
+          .setColor(0xffff00)
+          .setDescription(`There is no ${name} in the ${list_of_names[i]['squad']} squad. Check again the name, please`)
+        message.channel.send(msg);
         return;
       }else{
-        message.channel.send(`What are you writing? Please chack again`);
+        let msg = new Discord.MessageEmbed()
+        .setTitle(`What are you writing? Please chack again`)
+        .setColor(0xff0000)
+        message.channel.send(msg);
         return;
       }
     }
