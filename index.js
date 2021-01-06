@@ -1,3 +1,18 @@
+/*
+  TODO: Logger
+  TODO: join, leave, add player, remove player should stamp a get squad
+  TODO: add function "stamp player without squad"
+  TODO: add search function
+  TODO: send html at the end of the registration
+  TODO: add folders
+  TODO: remove player add lower case
+  TODO: find out why the bot stops when the record stops
+  TODO: clear squad when record stops
+  TODO: fix start all
+  TODO: record death, kill, real deaths, resurrection
+  TODO: add controll on null squad
+  TODO: list exp per player and per squad
+*/
 const utils = require("./utils");
 const dotenv = require('dotenv');
 const WebSocket = require('ws');
@@ -122,7 +137,7 @@ function updateValue(dict, value){
   let other_id = (dict[value['other_id']]) ? dict[value['other_id']]['name'] : value['other_id'];
   let character_id = value['character_id'];
   if(dict[value['character_id']]){
-    character_id = dict[value['character_id']]["name"]
+    // character_id = dict[value['character_id']]["name"]
     if(dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]){
       dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]++
     }else{
