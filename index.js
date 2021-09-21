@@ -1,17 +1,30 @@
 /*
-  TODO: Logger
-  TODO: join, leave, add player, remove player should stamp a get squad
-  TODO: add function "stamp player without squad"
-  TODO: add search function
-  TODO: send html at the end of the registration
-  TODO: add folders
+  TODO: JSON/HTML get every header
+  TODO: clear squad and requests when recording stop
+  TODO: not every player is tracked
+  TODO: differ between kill and death
+  
   TODO: remove player add lower case
-  TODO: find out why the bot stops when the record stops
+  TODO: start all seems not working, fix it
   TODO: clear squad when record stops
-  TODO: fix start all
-  TODO: record death, kill, real deaths, resurrection
-  TODO: add controll on null squad
+  TODO: react to get in a squad
+  TODO: react to get in a squad with a class
+  TODO: create annuncements
+  TODO: create VC for OPS
+  TODO: create/remove costum VC an TC
+  TODO: add function "stamp player without squad"
+  TODO: reserve a place for SL, FL and/or PL
+  TODO: join, leave, add player, remove player should stamp a get squad
+  TODO: record death, kill, real deaths, resurrection --> change death to Death as type of exp
+  TODO: send html at the end of the registration
+  TODO: continent locked
+  TODO: base captured
+  TODO: create alias for account
   TODO: list exp per player and per squad
+  TODO: add search function
+  TODO: add folders
+  TODO: create ping code for PS2 server
+  TODO: Logger
 */
 const utils = require("./utils");
 const dotenv = require('dotenv');
@@ -41,7 +54,6 @@ async function setIDfromName(name=null, params="&c:show=character_id", dict=dict
   try {
     let response = await got(`http://census.daybreakgames.com/get/ps2:v2/character/?name.first_lower=${name}${params}`);
     let player = JSON.parse(response.body).character_list[0];
-    // console.log(utils.stamp_now(), player)
     dict[player.character_id] = {}
     dict[player.character_id]["name"] = player.name.first;
     dict[player.character_id]["squad"] = squad;
@@ -50,7 +62,7 @@ async function setIDfromName(name=null, params="&c:show=character_id", dict=dict
     }
     console.log(utils.stamp_now(), dict);
   } catch (error) {
-    console.log(utils.stamp_now(), error);
+    console.error(utils.stamp_now(),`Player ${name} not found on census`, error);
   }
 }
 
@@ -69,7 +81,7 @@ from a list of names get the ID and populate the obj with the exp requested
 */
 async function populate_names(names, gain_experience_requested){
   for (let i = 0; i < names.length; i++) {
-    setIDfromName(names[i]['name'], '', dict_of_values, names[i]['squad'], gain_experience_requested);  
+    setIDfromName(names[i]['name'], '', dict_of_values, names[i]['squad'], names[i]['death'], names[i]['resurection'], gain_experience_requested);  
   }
 }
 
@@ -81,7 +93,7 @@ async function main(gain_experience_requested=["GainExperience_experience_id_1"]
   await populate_names(list_of_names, gain_experience_requested);
   
   // console.log(utils.stamp_now(), dict_of_values);
-
+  // TODO: find out why sometimes not every ids are taken up
   global.ws = await createWSConnection(`wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.PS2_TOKEN}`, function(){
     console.log(utils.stamp_now(), dict_of_values);
   });
@@ -101,7 +113,7 @@ async function main(gain_experience_requested=["GainExperience_experience_id_1"]
 
   /*
     navigate di e.data to get the value needed
-    TODO: add a list as a log of events
+    TODO: add a list as a log of events (not useful)
   */
   global.ws.onmessage = (e) => {
     let message_dict = JSON.parse(e.data);
@@ -132,16 +144,23 @@ async function main(gain_experience_requested=["GainExperience_experience_id_1"]
   {"character_id":"5428016459730317697","experience_id":"7", "other_id":"8291480109032191665"}
 */
 function updateValue(dict, value){
-  // TODO: if value["character_id"] throw error
-  // TODO: if value["experience_id"] throw error
+  // TODO: if value["character_id"] throw error --> find why
+  // TODO: if value["experience_id"] throw error --> find why
   let other_id = (dict[value['other_id']]) ? dict[value['other_id']]['name'] : value['other_id'];
-  let character_id = value['character_id'];
+  let character_id = (dict[value['character_id']]) ? dict[value['character_id']]['name'] : value['character_id'];
+  console.log(utils.stamp_now(), value)
+  console.log(utils.stamp_now(), character_id, type_gain_experience[`GainExperience_experience_id_${value["experience_id"]}`],other_id, value['amount']);
   if(dict[value['character_id']]){
-    // character_id = dict[value['character_id']]["name"]
-    if(dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]){
-      dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]++
+    if(value['experience_id'] == 1 && dict[value['other_id']]){
+      dict[value['character_id']]['death']++
+    }else if((value['experience_id'] == 7 || value['experience_id'] == 53) && dict[value['other_id']]){
+      dict[value['character_id']]['resurection']++
     }else{
-      dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`] = 1
+      if(dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]){
+        dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]++
+      }else{
+        dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`] = 1
+      }
     }
   }
 }
@@ -163,9 +182,9 @@ client.on('message', message => {
   const args = message.content.toUpperCase().slice(prefix.length).split(/ +/);
   const command = args.shift();
 
-if(command === 'ping'){ // ping the server
+  if(command === 'PING'){ // ping the server
     // TODO: make a real ping
-    message.channel.send('pong!');
+    message.channel.send(`pong! ${args[0]}`);
   } else if(command === 'HELP'){ // list commands
     const embed = new Discord.MessageEmbed()
       .setTitle(`Commands`)
@@ -209,7 +228,7 @@ if(command === 'ping'){ // ping the server
         number = 0
       }
       if(number < 12){
-        list_of_names.push({'name':name,'squad':squad});
+        list_of_names.push({'name':name,'squad':squad, 'death':0, 'resurection':0});
         embed.setTitle(`Success`).setColor(0x00ff00);
         embed.setDescription(`You joined ${squad} squad`);
       }else{
@@ -228,7 +247,7 @@ if(command === 'ping'){ // ping the server
         let squad = list_of_names[i]['squad']
         list_of_names.splice(i)
         const msg = new Discord.MessageEmbed()
-          .setTitle(`Leaved squad`)
+          .setTitle(`Squad left`)
           .setColor(0x00ff00)
         msg.setDescription(`You left ${squad}`);
         message.channel.send(msg);
@@ -291,10 +310,25 @@ if(command === 'ping'){ // ping the server
       return;
     }else{
       let squad = args[1];
-      list_of_squads.push(squad);
       const msg = new Discord.MessageEmbed()
-        .setTitle(`Added squad ${squad}`)
-        .setColor(0x00ff00)
+      if(args[1] === undefined || args[1] === null){
+        msg.setTitle(`Squad not created`)
+        .setColor(0xff0000)
+        .setDescription(`Squad ${squad} cannot be crated`);
+        message.channel.send(msg);
+        return
+      }
+      if(list_of_squads.indexOf(squad) > -1){
+        msg.setTitle(`Squad already exist`)
+        .setColor(0xff0000)
+        .setDescription(`Squad ${squad} already exist`);
+        message.channel.send(msg);
+        return
+      }
+      list_of_squads.push(squad);
+      msg.setDescription(`New squad`)
+      .setTitle(`Added squad ${squad}`)
+      .setColor(0x00ff00)
       message.channel.send(msg);
     }
   } else if(command === 'ADD'){ // insert name (add <name> <squad>)
@@ -325,7 +359,7 @@ if(command === 'ping'){ // ping the server
           number = 0
         }
         if(number < 12){
-          list_of_names.push({'name':name,'squad':squad});
+          list_of_names.push({'name':name,'squad':squad, 'death':0, 'resurection':0});
           embed.setTitle(`Success`).setColor(0x00ff00);
           embed.setDescription(`${name} added to squad ${squad}`);
         }else{
@@ -411,7 +445,7 @@ if(command === 'ping'){ // ping the server
         // message.channel.send(new Discord.MessageAttachment(file_html));
       });
     }
-  } else if(command === 'START'){ // start recording (start "<opsname>")
+  } else if(command === 'START'){ // start recording (start "<opsname> <params>")
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
       const error = new Discord.MessageEmbed()
         .setTitle(`Permission error`)
@@ -429,14 +463,13 @@ if(command === 'ping'){ // ping the server
         let month = (('' + now.getUTCMonth()).length === 1) ? '0'+(now.getUTCMonth()+1) : now.getUTCMonth()+1
         global.ops_name = `${now.getUTCFullYear()}${month}${date}_ops`
       }
-      
-      if(args.length > 1){
+      if(args.length >= 1){
         let exp_type = [];
         let list = '';
         const msg = new Discord.MessageEmbed()
           .setTitle(`Record`)
           .setColor(0xffffff)
-        if(args[1] === 'ALL'){
+        if(args[0] === 'ALL'){
           exp_type = type_gain_experience;
           msg.setDescription(`Starting recording all stats`);
         }else{
@@ -545,6 +578,18 @@ if(command === 'ping'){ // ping the server
     
   } else if(command === 'STAMP'){
     message.channel.send(new Discord.MessageAttachment(args[0]));
+  } else if(command === 'VALUES'){
+    const msg = new Discord.MessageEmbed()
+    .setTitle(`Values saved`)
+    .setColor(0xffffff)
+    msg.setDescription(JSON.stringify(dict_of_values));
+    message.channel.send(msg);
+  } else if(command === 'NAMES'){
+    const msg = new Discord.MessageEmbed()
+    .setTitle(`Values saved`)
+    .setColor(0xffffff)
+    msg.setDescription(JSON.stringify(list_of_names));
+    message.channel.send(msg);
   } else{
     message.channel.send("Sorry I didn't understand, can you repeat, please? Or type !help for the list of commands");
   }
