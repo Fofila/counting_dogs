@@ -121,7 +121,7 @@ async function main(gain_experience_requested=["GainExperience_experience_id_1"]
       // it is a useful message
       // console.log(utils.stamp_now(), message_dict)
       if(message_dict.type === "serviceMessage"){
-        console.log(utils.stamp_now(), message_dict)
+        // console.log(utils.stamp_now(), message_dict)
         // TODO: if not payload skip
         updateValue(dict_of_values, message_dict.payload)
       }
@@ -148,20 +148,50 @@ function updateValue(dict, value){
   // TODO: if value["experience_id"] throw error --> find why
   let other_id = (dict[value['other_id']]) ? dict[value['other_id']]['name'] : value['other_id'];
   let character_id = (dict[value['character_id']]) ? dict[value['character_id']]['name'] : value['character_id'];
-  console.log(utils.stamp_now(), value)
+  // console.log(utils.stamp_now(), value)
   console.log(utils.stamp_now(), character_id, type_gain_experience[`GainExperience_experience_id_${value["experience_id"]}`],other_id, value['amount']);
-  if(dict[value['character_id']]){
-    if(value['experience_id'] == 1 && dict[value['other_id']]){
-      dict[value['character_id']]['death']++
-    }else if((value['experience_id'] == 7 || value['experience_id'] == 53) && dict[value['other_id']]){
-      dict[value['character_id']]['resurection']++
+  
+  // if(dict[value['character_id']] !== undefined){
+  //   if(value['experience_id'] == 1 && dict[value['other_id']] !== undefined){
+  //     console.log("It's a death")
+  //     dict[value['character_id']]['death']++
+  //   }else if((value['experience_id'] == 7 || value['experience_id'] == 53) && dict[value['other_id']]){
+  //     dict[value['character_id']]['resurection']++
+  //   }else{
+  //     if(dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]){
+  //       dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]++
+  //     }else{
+  //       dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`] = 1
+  //     }
+  //   }
+  // }
+  if(dict[value['character_id']] !== undefined){
+    if(dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]){
+      dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]++
     }else{
-      if(dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]){
-        dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`]++
+      dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`] = 1
+    }
+  }else if(dict[value['other_id']] !== undefined){
+    console.log(value["experience_id"])
+    if((value['experience_id'] == 7 || value['experience_id'] == 53)){
+      console.log("He's Jeezus'!", other_id, character_id, dict[value['other_id']])
+      if(dict[value['other_id']]['resurection']){
+        dict[value['other_id']]['resurection']++
       }else{
-        dict[value['character_id']][`GainExperience_experience_id_${value["experience_id"]}`] = 1
+        dict[value['other_id']]['resurection'] = 1
+      }
+    }else{
+      console.log(type_gain_experience[`GainExperience_experience_id_${value["experience_id"]}`], type_gain_experience[`GainExperience_experience_id_${value["experience_id"]}`].indexOf("Kill"))
+      if(type_gain_experience[`GainExperience_experience_id_${value["experience_id"]}`].indexOf("Kill") >= 0){
+        console.log("He need some milk!", other_id, character_id, dict[value['other_id']])
+        if(dict[value['other_id']]['death']){
+          dict[value['other_id']]['death']++
+        }else{
+          dict[value['other_id']]['death'] = 1
+        }
       }
     }
+
   }
 }
 
