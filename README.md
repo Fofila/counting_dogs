@@ -28,9 +28,9 @@ It speaks via API with PlanetSide 2 to get the information needed.
 - remove a player from squad (should be online but I'm not sure it's working) 1h
 - starting a record should create a VC for each squad 2h
 - clear squads on record stop 1h
+- annuncements for recruiting 3h
 - react to get in a squad 2h
 - react to get in a squad with a class 1h
-- annuncements for recruiting 3h
 - every change to a squad should stamp the squad 1h
 
 ### Features nice to have
