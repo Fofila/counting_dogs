@@ -242,11 +242,11 @@ client.on('message', message => {
     let squad = args[0];
     let name = utils.clearName(message.author.username);
     const embed = new Discord.MessageEmbed()
-    if(list_of_squads.indexOf(squad) !== -1){
+    if(list_of_squads.indexOf(squad) !== -1 && squad != null){
       for (let i = 0; i < list_of_names.length; i++) {
         if(list_of_names[i]['name'] === name){
           embed.setTitle(`Warning`).setColor(0xffff00)
-          embed.setDescription(`You are in the ${list_of_names[i]['squad']} squad, if you want to change squad type: !leave ${list_of_names[i]['squad']}`);
+          embed.setDescription(`You are in the ${list_of_names[i]['squad']} squad, if you want to change squad type: ${prefix}leave ${list_of_names[i]['squad']}`);
           message.channel.send(embed);
           return;
         }
@@ -274,8 +274,11 @@ client.on('message', message => {
     let name = utils.clearName(message.author.username);
     for (let i = 0; i < list_of_names.length; i++) {
       if(list_of_names[i]['name'] === name){
+        console.log(list_of_names[i]['name'], name)
         let squad = list_of_names[i]['squad']
-        list_of_names.splice(i)
+        console.log(list_of_names)
+        list_of_names.splice(i, 1)
+        console.log(list_of_names)
         const msg = new Discord.MessageEmbed()
           .setTitle(`Squad left`)
           .setColor(0x00ff00)
@@ -310,25 +313,32 @@ client.on('message', message => {
     embed.setDescription(res);
     message.channel.send(embed);
   } else if(command === 'GET' && args[0] === 'SQUADS'){ // see all squad (get squad)
-    for (let i = 0; i < list_of_squads.length; i++) {
-      let res = '';
-      let squad = list_of_squads[i];
-      let number = 0
-      try {
-        number = utils.getSquad(list_of_names)[squad].length
-      } catch (error) {
-        number = 0
-      }
+    if(list_of_squads.length === 0){
       const embed = new Discord.MessageEmbed()
+        .setTitle(`No squad present`)
+        .setColor(0xffffff)
+      message.channel.send(embed);
+    }else{
+      for (let i = 0; i < list_of_squads.length; i++) {
+        let res = '';
+        let squad = list_of_squads[i];
+        let number = 0
+        try {
+          number = utils.getSquad(list_of_names)[squad].length
+        } catch (error) {
+          number = 0
+        }
+        const embed = new Discord.MessageEmbed()
         .setTitle(`Squad ${squad} ${number}/12`)
         .setColor(0xffffff)
-      for (let j = 0; j < list_of_names.length; j++) {
-        if(list_of_names[j]['squad'] === squad){
-          res += `${list_of_names[j]['name']}\n`
+        for (let j = 0; j < list_of_names.length; j++) {
+          if(list_of_names[j]['squad'] === squad){
+            res += `${list_of_names[j]['name']}\n`
+          }
         }
+        embed.setDescription(res);
+        message.channel.send(embed);
       }
-      embed.setDescription(res);
-      message.channel.send(embed);
     }
   } else if(command === 'ADD' && args[0] === 'SQUAD'){ // add squad (add squad <squad>)
     if (!message.member.hasPermission('ADMINISTRATOR') || !message.member.hasPermission('MANAGE_CHANNELS') || !message.member.hasPermission('MANAGE_GUILD')){
@@ -377,7 +387,7 @@ client.on('message', message => {
         for (let i = 0; i < list_of_names.length; i++) {
           if(list_of_names[i]['name'] === name){
             embed.setTitle(`Warning`).setColor(0xffff00)
-            embed.setDescription(`${name} is in the ${list_of_names[i]['squad']} squad, you have to remove from the other squad: !remove ${name} ${list_of_names[i]['squad']}`);
+            embed.setDescription(`${name} is in the ${list_of_names[i]['squad']} squad, you have to remove from the other squad: ${prefix}remove ${name} ${list_of_names[i]['squad']}`);
             message.channel.send(embed);
             return;
           }
@@ -621,7 +631,7 @@ client.on('message', message => {
     msg.setDescription(JSON.stringify(list_of_names));
     message.channel.send(msg);
   } else{
-    message.channel.send("Sorry I didn't understand, can you repeat, please? Or type !help for the list of commands");
+    message.channel.send(`Sorry I didn't understand, can you repeat, please? Or type ${prefix}help for the list of commands`);
   }
 })
 
